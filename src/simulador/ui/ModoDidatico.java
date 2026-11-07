@@ -87,13 +87,17 @@ public class ModoDidatico {
 
         if ( e.isMouseButtonPressed( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
             if ( dentro( m, x, y, largura(), ALT_CABECALHO ) ) {
+                Sons.clique();
                 aberto = !aberto;
             } else if ( controlesAtivos && dentro( m, x + 12, y + 46, 230, 24 ) ) {
+                Sons.clique();
                 ativo = !ativo;
             } else if ( controlesAtivos && dentro( m, x + 10, y + 94, 216, 22 ) ) {
+                Sons.clique();
                 arrastandoVel = true;
                 ajustarVelocidade( m );
             } else if ( controlesAtivos && extraSuportada && dentro( m, x + 12, y + 132, 230, 24 ) ) {
+                Sons.clique();
                 extraAtiva = !extraAtiva;
             } else if ( aberto && !contem( m ) ) {
                 aberto = false;
@@ -142,20 +146,20 @@ public class ModoDidatico {
             e.fillRectangle( x + TRILHA_X, y + 102, TRILHA_LARG, 4, Tema.BORDA );
             double f = ( velocidade - VEL_MIN ) / ( VEL_MAX - VEL_MIN );
             e.fillCircle( new Vector2( x + TRILHA_X + f * TRILHA_LARG, y + 104 ), 7, Tema.TRIGGER );
+        }
 
-           if ( extraSuportada && progresso > 0.85 ) {
-                double a = Math.min( 1, ( progresso - 0.85 ) / 0.15 );
-                double ex = x + 18;
-                double ey = y + 140;
-                BotaoEstilizado.retanguloArredondado( e, ex - 1, ey - 1, 18, 18, 5,
-                        ColorUtils.fade( Tema.BORDA, a ) );
-                BotaoEstilizado.retanguloArredondado( e, ex, ey, 16, 16, 4,
-                        Tema.mistura( Tema.PAINEL, extraAtiva ? Tema.TRIGGER : Tema.PAINEL, a ) );
-                if ( extraAtiva ) {
-                    e.fillRectangle( ex + 5, ey + 5, 6, 6, ColorUtils.fade( Tema.PAINEL, a ) );
-                }
-                e.drawText( "Visão 2-3", x + 42, ey + 8 - 14 / 3.0, 14, ColorUtils.fade( Tema.TEXTO, a ) );
+        if ( extraSuportada && progresso > 0.85 ) {
+            double a = Math.min( 1, ( progresso - 0.85 ) / 0.15 );
+            double ex = x + 18;
+            double ey = y + 140;
+            BotaoEstilizado.retanguloArredondado( e, ex - 1, ey - 1, 18, 18, 5,
+                    ColorUtils.fade( Tema.BORDA, a ) );
+            BotaoEstilizado.retanguloArredondado( e, ex, ey, 16, 16, 4,
+                    Tema.mistura( Tema.PAINEL, extraAtiva ? Tema.TRIGGER : Tema.PAINEL, a ) );
+            if ( extraAtiva ) {
+                e.fillRectangle( ex + 5, ey + 5, 6, 6, ColorUtils.fade( Tema.PAINEL, a ) );
             }
+            e.drawText( "Visão 2-3", x + 42, ey + 8 - 14 / 3.0, 14, ColorUtils.fade( Tema.TEXTO, a ) );
         }
     }
 

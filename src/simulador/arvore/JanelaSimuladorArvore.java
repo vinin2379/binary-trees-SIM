@@ -2,7 +2,6 @@ package simulador.arvore;
 
 import br.com.davidbuzatto.jsge.core.Camera2D;
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
-import br.com.davidbuzatto.jsge.core.utils.ColorUtils;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -16,6 +15,7 @@ import simulador.Main;
 import simulador.ui.BotaoEstilizado;
 import simulador.ui.CampoTexto;
 import simulador.ui.ModoDidatico;
+import simulador.ui.Sons;
 import simulador.ui.Tema;
 
 /**
@@ -47,6 +47,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
 
     protected ArvoreBase arvore;
     private No noSobMouse;
+    private No noSobMouseAnt;
     private List<Viajante> viajantes;
     private Deque<Integer> operacoesPendentes;
     private List<No> piscando;
@@ -99,8 +100,14 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         verificacaoPendente = true;
     }
 
+    /** Painel do modo didático, para as subclasses lerem opções extras. */
+    protected ModoDidatico modoDidatico() {
+        return modo;
+    }
+
     @Override
     public void create() {
+        Sons.iniciar( this );
         arvore = criarArvore();
         viajantes = new ArrayList<>();
         operacoesPendentes = new ArrayDeque<>();
@@ -206,74 +213,17 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
                 ? controlador.telaParaMundo( mouse ) : null;
         noSobMouse = mundo != null ? arvore.buscarPorClique( mundo ) : null;
 
+        if ( noSobMouse != null && noSobMouse != noSobMouseAnt ) {
+            Sons.hover();
+        }
+        noSobMouseAnt = noSobMouse;
+
         controlador.atualizar( this, mouse, sobToolbar || sobExtra || noSobMouse != null );
 
         if ( isMouseButtonPressed( MOUSE_BUTTON_LEFT ) && noSobMouse != null ) {
             removerChave( noSobMouse.c );
             noSobMouse = null;
         }
-    }
-    
-    @Override
-    public void draw() {
-        clearBackground( Tema.FUNDO );
-
-        beginMode2D( controlador.camera() );
-        arvore.desenharFundo( this );
-        arvore.desenhar( this, noSobMouse );
-        for ( Viajante v : viajantes ) {
-            v.desenhar( this );
-        }
-        endMode2D();
-
-        String leg = arvore.legenda();
-        if ( leg != null && fase != Fase.NENHUMA ) {
-            drawText( leg, 10, 575, 14, Tema.TEXTO );
-        }
-
-        comDeslocamento( -desl( INICIO_PAINEL, DUR_ITEM, DESLOC_TOOLBAR ), () -> {
-            fillRectangle( 10, 10, 880, 55, Tema.PAINEL );
-            drawRectangle( 10, 10, 880, 55, Tema.BORDA );
-            drawText( "Chave:", 20, 31, 18, Tema.TEXTO );
-        } );
-        comDeslocamento( -desl( INICIO_CAMPO, DUR_ITEM, DESLOC_TOOLBAR ), () -> campoValor.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_INSERIR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnInserir.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_LIMPAR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnLimpar.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_VOLTAR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnVoltar.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_MODO, DUR_ITEM, DESLOC_TOOLBAR ), () -> modo.desenhar( this ) );
-
-        desenharExtras();
-    }
-    
-    
-    /** Pinta a subárvore direita de verde e a esquerda de vermelho, e mostra direita - esquerda acima do nó. */
-    private void desenharBalanco( No no ) {
-        String rotulo = arvore.textoHover( no );
-        if ( rotulo != null ) {
-            int tam = 14;
-            int larg = measureText( rotulo, tam );
-            drawText( rotulo, no.pos.x - larg / 2.0, no.pos.y - no.raio - 14, tam, Tema.TEXTO );
-            return;
-        }
-   
-        int esq = arvore.alturaSubarvore( no.esq );
-        int dir = arvore.alturaSubarvore( no.d );
-        pintarSubarvore( no.d, Tema.VERDE );
-        pintarSubarvore( no.esq, Tema.VERMELHO );
-
-        String conta = esq + " - " + dir + " = " + ( esq - dir );
-        int tam = 14;
-        int larg = measureText( conta, tam );
-        drawText( conta, no.pos.x - larg / 2.0, no.pos.y - no.raio - 14, tam, Tema.TEXTO );
-    }
-
-    private void pintarSubarvore( No n, java.awt.Color cor ) {
-        if ( n == null ) {
-            return;
-        }
-        fillCircle( n.pos, n.raio, ColorUtils.fade( cor, 0.45 ) );
-        pintarSubarvore( n.esq, cor );
-        pintarSubarvore( n.d, cor );
     }
 
     /** Máquina de estados: inserções didáticas e verificações de balanceamento. */
@@ -358,6 +308,37 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         fase = Fase.NENHUMA;
     }
 
+    @Override
+    public void draw() {
+        clearBackground( Tema.FUNDO );
+
+        beginMode2D( controlador.camera() );
+        arvore.desenharFundo( this );
+        arvore.desenhar( this, noSobMouse );
+        for ( Viajante v : viajantes ) {
+            v.desenhar( this );
+        }
+        endMode2D();
+
+        String leg = arvore.legenda();
+        if ( leg != null && fase != Fase.NENHUMA ) {
+            drawText( leg, 10, 575, 14, Tema.TEXTO );
+        }
+
+        comDeslocamento( -desl( INICIO_PAINEL, DUR_ITEM, DESLOC_TOOLBAR ), () -> {
+            fillRectangle( 10, 10, 880, 55, Tema.PAINEL );
+            drawRectangle( 10, 10, 880, 55, Tema.BORDA );
+            drawText( "Chave:", 20, 31, 18, Tema.TEXTO );
+        } );
+        comDeslocamento( -desl( INICIO_CAMPO, DUR_ITEM, DESLOC_TOOLBAR ), () -> campoValor.desenhar( this ) );
+        comDeslocamento( -desl( INICIO_INSERIR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnInserir.desenhar( this ) );
+        comDeslocamento( -desl( INICIO_LIMPAR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnLimpar.desenhar( this ) );
+        comDeslocamento( -desl( INICIO_VOLTAR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnVoltar.desenhar( this ) );
+        comDeslocamento( -desl( INICIO_MODO, DUR_ITEM, DESLOC_TOOLBAR ), () -> modo.desenhar( this ) );
+
+        desenharExtras();
+    }
+
     private void comDeslocamento( double dy, Runnable desenho ) {
         camToolbar.offset.y = dy;
         beginMode2D( camToolbar );
@@ -438,6 +419,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         if ( fase != Fase.NENHUMA ) {
             return;
         }
+        Sons.desfazer();
         viajantes.removeIf( v -> v.destino.c == c );
         if ( arvore.remover( c ) ) {
             arvore.atualizarNos( espHor, espVert, margemHor, margemVert );
@@ -456,9 +438,4 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         noSobMouse = null;
         campoValor.limpar();
     }
-    
-    protected ModoDidatico modoDidatico() {
-    return modo;
-}
-    
 }

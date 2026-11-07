@@ -6,9 +6,10 @@ import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 import java.awt.Point;
 import simulador.abb.JanelaSimuladorABB;
-import simulador.ui.Tema;
 import simulador.avl.JanelaSimuladorAVL;
 import simulador.rb.JanelaSimuladorRB;
+import simulador.ui.Sons;
+import simulador.ui.Tema;
 
 /**
  * Janela do menu. Título e nomes entram letra a letra; ao escolher um simulador,
@@ -44,7 +45,6 @@ public class Main extends EngineFrame {
     private static final double ATRASO_POR_LETRA = 0.02;
     private static final double DESLOCAMENTO_Y = 30;
 
-    // saída: menu e nomes juntos, depois o título
     private static final double DURACAO_SAIDA_MENU = 0.45;
     private static final double INICIO_SAIDA_NOMES = 0.0;
     private static final double INICIO_SAIDA_TITULO = 0.4;
@@ -70,10 +70,10 @@ public class Main extends EngineFrame {
         double escala = 1;
         double alpha;
         boolean hover;
+        boolean hoverAnt;
         double tempo;
         double fase;
         double chacoalhar;
-        boolean hoverAnt;
 
         Item( String icone, String rotulo, int acao, boolean ativo ) {
             this.icone = icone;
@@ -108,12 +108,14 @@ public class Main extends EngineFrame {
 
     @Override
     public void create() {
+        Sons.iniciar( this );
+        Sons.darkspace();
         centro = new Vector2( LARG / 2.0, CENTRO_Y );
 
         itens = new Item[] {
             new Item( "ABB", "Árvore Binária de Busca", 0, true ),
             new Item( "AVL", "Árvore AVL", 1, true ),
-            new Item( "RN", "Rubro-Negra", 2, true),
+            new Item( "RN", "Rubro-Negra", 2, true ),
             new Item( "Sair", "Sair", 3, true )
         };
 
@@ -167,6 +169,7 @@ public class Main extends EngineFrame {
             } else if ( interativo ) {
                 for ( Item it : itens ) {
                     if ( it.ativo && mouse.distance( it.pos ) <= RAIO_ITEM * it.escala ) {
+                        Sons.clique();
                         iniciarSaida( it.acao );
                         break;
                     }
@@ -181,6 +184,11 @@ public class Main extends EngineFrame {
                 it.atraso -= delta;
                 if ( it.atraso <= 0 ) {
                     it.pendente = false;
+                    if ( aberto ) {
+                        Sons.itemAparece();
+                    } else {
+                        Sons.itemVolta();
+                    }
                     it.alvo = aberto ? pontoNoCirculo( i ) : new Vector2( centro.x, centro.y );
                 }
             }
@@ -191,6 +199,10 @@ public class Main extends EngineFrame {
             it.pos.y += it.vel.y * delta;
 
             it.hover = interativo && mouse != null && mouse.distance( it.pos ) <= RAIO_ITEM;
+            if ( it.hover && !it.hoverAnt ) {
+                Sons.hover();
+            }
+            it.hoverAnt = it.hover;
 
             it.tempo += delta;
             if ( it.chacoalhar > 0 ) {
@@ -199,7 +211,6 @@ public class Main extends EngineFrame {
             if ( it.hover && !it.hoverAnt ) {
                 it.chacoalhar = 0.35;
             }
-            it.hoverAnt = it.hover;
 
             double escalaAlvo = it.hover ? 1.1 : 1.0;
             it.escala += ( escalaAlvo - it.escala ) * Math.min( 1, delta * 15 );
@@ -210,28 +221,25 @@ public class Main extends EngineFrame {
     }
 
     @Override
-    
     public void draw() {
         clearBackground( Tema.FUNDO );
-        
 
         if ( saindo ) {
             desenharSaida();
             return;
-        } else {
-            
-        desenharEntrada();
-        
         }
 
-        
+        desenharEntrada();
     }
 
-    
-    private void desenharEntrada(){
-        
+    /** Tela de entrada: título, nomes, itens do menu e botão central. */
+    private void desenharEntrada() {
         desenharRevelado( TITULO, TAM_TITULO, Y_TITULO, 0 );
         desenharRevelado( NOMES, TAM_NOMES, Y_NOMES, TITULO.length() );
+
+        if ( !revelacaoTerminou ) {
+            return;
+        }
 
         double entrada = easeOutBack( progressoTrigger );
         double yTrigger = centro.y + ( 1 - entrada ) * 40;
@@ -240,14 +248,12 @@ public class Main extends EngineFrame {
 
         double dx = tremor > 0 ? Math.sin( tempo * 60 ) * 2 : 0;
         desenharTrigger( centro.x + dx, yTrigger, RAIO_TRIGGER * Math.max( 0, entrada ), entrada > 0.5 );
-        
     }
-    
+
     /**
      * Desenha os itens do menu. saida vai de 0 (menu normal) a 1 (menu totalmente
      * recolhido no centro e invisível).
      */
-    
     private void desenharItens( double saida ) {
         double k = 1 - saida;
         for ( Item it : itens ) {
@@ -299,8 +305,8 @@ public class Main extends EngineFrame {
             setLocation( posMenu );
         }
         toFront();
+        Sons.darkspace();
         reiniciarEntrada();
-    
     }
 
     private void reiniciarEntrada() {
@@ -378,13 +384,16 @@ public class Main extends EngineFrame {
     private void alternarMenu() {
         aberto = !aberto;
         tempoAberto = 0;
+        if ( aberto ) {
+            Sons.abrirMenu();
+        } else {
+            Sons.fecharMenu();
+            tremor = DURACAO_TREMOR;
+        }
         for ( int i = 0; i < itens.length; i++ ) {
             Item it = itens[i];
             it.pendente = true;
             it.atraso = i * ( aberto ? ATRASO_ABRIR : ATRASO_FECHAR );
-        }
-        if ( !aberto ) {
-            tremor = DURACAO_TREMOR;
         }
     }
 

@@ -22,6 +22,7 @@ public class BotaoEstilizado {
     private final Color corTexto;
 
     private boolean hover;
+    private boolean hoverAnt;
 
     public BotaoEstilizado( double x, double y, double largura, double altura, String texto,
             Color corFundo, Color corHover, Color corTexto ) {
@@ -35,19 +36,25 @@ public class BotaoEstilizado {
         this.corTexto = corTexto;
     }
 
-    /**
-     * Atualiza o hover e informa se o botão foi clicado neste frame.
-     */
+    /** Atualiza o hover e informa se o botão foi clicado neste frame. */
     public boolean atualizar( EngineFrame e ) {
         Vector2 m = e.getMousePositionPoint();
         hover = m != null && m.x >= x && m.x <= x + largura && m.y >= y && m.y <= y + altura;
-        return hover && e.isMouseButtonPressed( EngineFrame.MOUSE_BUTTON_LEFT );
+        if ( hover && !hoverAnt ) {
+            Sons.hover();
+        }
+        hoverAnt = hover;
+
+        boolean clicou = hover && e.isMouseButtonPressed( EngineFrame.MOUSE_BUTTON_LEFT );
+        if ( clicou ) {
+            Sons.clique();
+        }
+        return clicou;
     }
 
     public void desenhar( EngineFrame e ) {
         Color cor = hover ? corHover : corFundo;
 
-        // borda sutil por trás do preenchimento
         retanguloArredondado( e, x - 1, y - 1, largura + 2, altura + 2, RAIO_CANTO + 1, Tema.BORDA );
         retanguloArredondado( e, x, y, largura, altura, RAIO_CANTO, cor );
 
