@@ -116,6 +116,7 @@ public class JanelaSimuladorABB extends EngineFrame {
             tempoAnim = Math.max( 0, tempoAnim - delta );
             if ( tempoAnim <= 0 ) {
                 voltarAoMenu();
+                saindo = false;
                 return;
             }
         }

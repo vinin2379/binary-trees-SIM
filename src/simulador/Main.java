@@ -211,12 +211,25 @@ public class Main extends EngineFrame {
     
     public void draw() {
         clearBackground( Tema.FUNDO );
+        
 
         if ( saindo ) {
             desenharSaida();
             return;
         }
+        
+        desenharEntrada();
 
+        
+    }
+
+    /**
+     * Desenha os itens do menu. saida vai de 0 (menu normal) a 1 (menu totalmente
+     * recolhido no centro e invisível).
+     */
+    
+    private void desenharEntrada(){
+        
         desenharRevelado( TITULO, TAM_TITULO, Y_TITULO, 0 );
         desenharRevelado( NOMES, TAM_NOMES, Y_NOMES, TITULO.length() );
 
@@ -227,12 +240,8 @@ public class Main extends EngineFrame {
 
         double dx = tremor > 0 ? Math.sin( tempo * 60 ) * 2 : 0;
         desenharTrigger( centro.x + dx, yTrigger, RAIO_TRIGGER * Math.max( 0, entrada ), entrada > 0.5 );
+        
     }
-
-    /**
-     * Desenha os itens do menu. saida vai de 0 (menu normal) a 1 (menu totalmente
-     * recolhido no centro e invisível).
-     */
     private void desenharItens( double saida ) {
         double k = 1 - saida;
         for ( Item it : itens ) {
@@ -285,8 +294,7 @@ public class Main extends EngineFrame {
         }
         toFront();
         reiniciarEntrada();
-        // repinta já no primeiro frame, sem depender da revelação
-        clearBackground( Tema.FUNDO );
+    
     }
 
     private void reiniciarEntrada() {
