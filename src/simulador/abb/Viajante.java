@@ -1,10 +1,11 @@
-package simulador;
+package simulador.abb;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import simulador.Tema;
 
 /**
  * Círculo com o valor da chave que percorre a árvore no modo didático.

@@ -1,7 +1,8 @@
-package simulador;
+package simulador.ui;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
+import simulador.Tema;
 
 /**
  * Campo de texto numérico desenhado com primitivas da JSGE.

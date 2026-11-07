@@ -1,5 +1,6 @@
 package simulador;
 
+import simulador.abb.JanelaSimuladorABB;
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.core.utils.ColorUtils;
 import br.com.davidbuzatto.jsge.math.Vector2;
@@ -24,7 +25,7 @@ public class Main extends EngineFrame {
     private static final int TAM_ICONE = 14;
     private static final int TAM_ROTULO = 14;
 
-    static Main instancia;
+    public static Main instancia;
 
     private static class Item {
 

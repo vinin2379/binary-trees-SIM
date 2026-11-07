@@ -1,15 +1,16 @@
-package simulador;
+package simulador.ui;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
+import simulador.Tema;
 
 /**
  * Botão da toolbar que expande para mostrar as opções do modo didático.
  */
-class ModoDidatico {
+public class ModoDidatico {
 
-    private static final double LARG_FECHADO = 170;
+    private static final double LARG_FECHADO = 190;
     private static final double LARG_ABERTO = 240;
     private static final double ALT_CABECALHO = 36;
     private static final double ALT_ABERTO = 130;
@@ -26,16 +27,16 @@ class ModoDidatico {
     private double progresso;
     private double velocidade = 1.0;
 
-    ModoDidatico( double x, double y ) {
+    public ModoDidatico( double x, double y ) {
         this.x = x;
         this.y = y;
     }
 
-    boolean ativo() {
+    public boolean ativo() {
         return ativo;
     }
 
-    double velocidadeAnimacao() {
+    public double velocidadeAnimacao() {
         return ativo ? velocidade : 1.0;
     }
 
@@ -47,7 +48,7 @@ class ModoDidatico {
         return ALT_CABECALHO + ( ALT_ABERTO - ALT_CABECALHO ) * progresso;
     }
 
-    boolean contem( Vector2 m ) {
+    public boolean contem( Vector2 m ) {
         return m != null && dentro( m, x, y, largura(), altura() );
     }
 
@@ -55,7 +56,7 @@ class ModoDidatico {
         return m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h;
     }
 
-    void atualizar( EngineFrame e, double delta ) {
+    public void atualizar( EngineFrame e, double delta ) {
         progresso += ( ( aberto ? 1 : 0 ) - progresso ) * Math.min( 1, delta * 9 );
 
         if ( !e.isMouseButtonDown( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
@@ -94,7 +95,7 @@ class ModoDidatico {
         velocidade = Math.round( v * 10 ) / 10.0;
     }
 
-    void desenhar( EngineFrame e ) {
+    public void desenhar( EngineFrame e ) {
         double w = largura();
         double h = altura();
 
@@ -106,10 +107,12 @@ class ModoDidatico {
         BotaoEstilizado.retanguloArredondado( e, x, y, w, ALT_CABECALHO, 8, fundoCab );
         e.drawText( "Modo Didático", x + 14, y + ALT_CABECALHO / 2.0 - 16 / 3.0, 16, txtCab );
 
+        // setinha: gira 180° conforme o painel abre
+        desenharSetinha( e, x + w - 20, y + ALT_CABECALHO / 2.0, progresso * Math.PI, txtCab );
+
         if ( progresso > 0.5 ) {
             e.drawLine( x + 8, y + ALT_CABECALHO, x + w - 8, y + ALT_CABECALHO, Tema.BORDA );
 
-            // checkbox
             double cx = x + 18;
             double cy = y + 52;
             BotaoEstilizado.retanguloArredondado( e, cx - 1, cy - 1, 18, 18, 5, Tema.BORDA );
@@ -119,11 +122,29 @@ class ModoDidatico {
             }
             e.drawText( "Ativar modo didático", x + 42, cy + 8 - 14 / 3.0, 14, Tema.TEXTO );
 
-            // slider de velocidade
             e.drawText( String.format( "Velocidade: %.1fx", velocidade ), x + 18, y + 78, 14, Tema.TEXTO );
             e.fillRectangle( x + TRILHA_X, y + 102, TRILHA_LARG, 4, Tema.BORDA );
             double f = ( velocidade - VEL_MIN ) / ( VEL_MAX - VEL_MIN );
             e.fillCircle( new Vector2( x + TRILHA_X + f * TRILHA_LARG, y + 104 ), 7, Tema.TRIGGER );
         }
+    }
+
+    /**
+     * Chevron em V rotacionado em torno do centro.
+     */
+    private static void desenharSetinha( EngineFrame e, double cx, double cy, double ang, Color cor ) {
+        double[][] base = { { -5, -2 }, { 0, 3 }, { 5, -2 } };
+        double cos = Math.cos( ang );
+        double sin = Math.sin( ang );
+        double[] xs = new double[3];
+        double[] ys = new double[3];
+        for ( int i = 0; i < 3; i++ ) {
+            double px = base[i][0];
+            double py = base[i][1];
+            xs[i] = cx + px * cos - py * sin;
+            ys[i] = cy + px * sin + py * cos;
+        }
+        e.drawLine( xs[0], ys[0], xs[1], ys[1], cor );
+        e.drawLine( xs[1], ys[1], xs[2], ys[2], cor );
     }
 }
