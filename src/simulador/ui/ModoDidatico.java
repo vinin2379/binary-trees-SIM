@@ -5,7 +5,8 @@ import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 
 /**
- * Botão da toolbar que expande para mostrar as opções do modo didático.
+ * Botão da toolbar do modo didático: ativar e velocidade da animação.
+ * Controles específicos de cada árvore ficam na própria janela.
  */
 public class ModoDidatico {
 
@@ -22,7 +23,7 @@ public class ModoDidatico {
     private final double y;
     private boolean aberto;
     private boolean ativo;
-    private boolean arrastando;
+    private boolean arrastandoVel;
     private double progresso;
     private double velocidade = 1.0;
 
@@ -59,7 +60,7 @@ public class ModoDidatico {
         progresso += ( ( aberto ? 1 : 0 ) - progresso ) * Math.min( 1, delta * 9 );
 
         if ( !e.isMouseButtonDown( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
-            arrastando = false;
+            arrastandoVel = false;
         }
 
         Vector2 m = e.getMousePositionPoint();
@@ -75,14 +76,14 @@ public class ModoDidatico {
             } else if ( controlesAtivos && dentro( m, x + 12, y + 46, 230, 24 ) ) {
                 ativo = !ativo;
             } else if ( controlesAtivos && dentro( m, x + 10, y + 94, 216, 22 ) ) {
-                arrastando = true;
+                arrastandoVel = true;
                 ajustarVelocidade( m );
             } else if ( aberto && !contem( m ) ) {
                 aberto = false;
             }
         }
 
-        if ( arrastando && e.isMouseButtonDown( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
+        if ( arrastandoVel && e.isMouseButtonDown( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
             ajustarVelocidade( m );
         }
     }
@@ -106,7 +107,6 @@ public class ModoDidatico {
         BotaoEstilizado.retanguloArredondado( e, x, y, w, ALT_CABECALHO, 8, fundoCab );
         e.drawText( "Modo Didático", x + 14, y + ALT_CABECALHO / 2.0 - 16 / 3.0, 16, txtCab );
 
-        // setinha: gira 180° conforme o painel abre
         desenharSetinha( e, x + w - 20, y + ALT_CABECALHO / 2.0, progresso * Math.PI, txtCab );
 
         if ( progresso > 0.5 ) {
@@ -128,9 +128,6 @@ public class ModoDidatico {
         }
     }
 
-    /**
-     * Chevron em V rotacionado em torno do centro.
-     */
     private static void desenharSetinha( EngineFrame e, double cx, double cy, double ang, Color cor ) {
         double[][] base = { { -5, -2 }, { 0, 3 }, { 5, -2 } };
         double cos = Math.cos( ang );
