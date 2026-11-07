@@ -1,11 +1,10 @@
 package simulador;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
-import br.com.davidbuzatto.jsge.imgui.GuiTextField;
 import br.com.davidbuzatto.jsge.math.Vector2;
 
 /**
- * Janela Independente do Simulador de ABB com componentes IMGUI nativos.
+ * Janela Independente do Simulador de ABB com componentes desenhados à mão.
  *
  * @author Vinícius Lima Sobon
  */
@@ -19,9 +18,8 @@ public class JanelaSimuladorABB extends EngineFrame {
     private int margemHor = 50;
     private int margemVert = 120;
 
-    private GuiTextField txtValor;
+    private CampoTexto campoValor;
     private BotaoEstilizado btnInserir;
-    private BotaoEstilizado btnRemover;
     private BotaoEstilizado btnVoltar;
 
     public JanelaSimuladorABB() {
@@ -30,15 +28,10 @@ public class JanelaSimuladorABB extends EngineFrame {
 
     @Override
     public void create() {
-        useAsDependencyForIMGUI();
         abb = new ABB();
 
-        setDefaultFontSize( 18 );
-
-        txtValor = new GuiTextField( 90, 20, 100, 35, "" );
-        btnInserir = new BotaoEstilizado( 215, 20, 110, 36, "Inserir",
-                Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
-        btnRemover = new BotaoEstilizado( 340, 20, 110, 36, "Remover",
+        campoValor = new CampoTexto( 90, 20, 110, 36 );
+        btnInserir = new BotaoEstilizado( 225, 20, 110, 36, "Inserir",
                 Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
         btnVoltar = new BotaoEstilizado( 780, 20, 100, 36, "Voltar",
                 Tema.ITEM, Tema.ITEM_HOVER, Tema.TEXTO );
@@ -47,15 +40,12 @@ public class JanelaSimuladorABB extends EngineFrame {
     @Override
     public void update( double delta ) {
 
-        txtValor.update( delta );
+        campoValor.atualizar( this, delta );
 
-        if ( btnInserir.atualizar( this ) ) {
+        if ( btnInserir.atualizar( this ) || campoValor.enterFoiPressionado() ) {
             executarInsercao();
         }
-
-        if ( btnRemover.atualizar( this ) ) {
-            executarRemocao();
-        }
+        
 
         if ( btnVoltar.atualizar( this ) ) {
             voltarAoMenu();
@@ -80,9 +70,8 @@ public class JanelaSimuladorABB extends EngineFrame {
         drawRectangle( 10, 10, 880, 55, Tema.BORDA );
         drawText( "Chave:", 20, 31, 18, Tema.TEXTO );
 
-        txtValor.draw();
+        campoValor.desenhar( this );
         btnInserir.desenhar( this );
-        btnRemover.desenhar( this );
         btnVoltar.desenhar( this );
 
         abb.desenhar( this, noSobMouse );
@@ -97,12 +86,12 @@ public class JanelaSimuladorABB extends EngineFrame {
 
     private void executarInsercao() {
         try {
-            String texto = txtValor.getValue().trim();
+            String texto = campoValor.getValor().trim();
             if ( !texto.isEmpty() ) {
                 int valor = Integer.parseInt( texto );
                 abb.put( valor );
                 abb.atualizarNos( espHor, espVert, margemHor, margemVert );
-                txtValor.setValue( "" );
+                campoValor.limpar();
             }
         } catch ( NumberFormatException e ) {
         }
@@ -110,12 +99,12 @@ public class JanelaSimuladorABB extends EngineFrame {
 
     private void executarRemocao() {
         try {
-            String texto = txtValor.getValue().trim();
+            String texto = campoValor.getValor().trim();
             if ( !texto.isEmpty() ) {
                 int valor = Integer.parseInt( texto );
                 abb.delete( valor );
                 abb.atualizarNos( espHor, espVert, margemHor, margemVert );
-                txtValor.setValue( "" );
+                campoValor.limpar();
             }
         } catch ( NumberFormatException e ) {
         }

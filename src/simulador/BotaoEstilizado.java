@@ -59,7 +59,7 @@ public class BotaoEstilizado {
                 corTexto );
     }
 
-    private static void retanguloArredondado( EngineFrame e, double x, double y,
+    static void retanguloArredondado( EngineFrame e, double x, double y,
             double w, double h, double r, Color cor ) {
         double d = 2 * r;
         e.fillRectangle( x + r, y, w - d, h, cor );
