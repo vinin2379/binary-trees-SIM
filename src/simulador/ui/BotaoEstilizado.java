@@ -3,7 +3,6 @@ package simulador.ui;
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
-import simulador.Tema;
 
 /**
  * Botão retangular com cantos arredondados, desenhado com primitivas da JSGE.

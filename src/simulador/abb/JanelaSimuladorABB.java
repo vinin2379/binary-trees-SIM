@@ -5,8 +5,9 @@ import br.com.davidbuzatto.jsge.math.Vector2;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import simulador.ControladorCamera;
 import simulador.Main;
-import simulador.Tema;
+import simulador.ui.Tema;
 import simulador.ui.BotaoEstilizado;
 import simulador.ui.CampoTexto;
 import simulador.ui.ModoDidatico;
@@ -18,9 +19,12 @@ import simulador.ui.ModoDidatico;
  */
 public class JanelaSimuladorABB extends EngineFrame {
 
+    private static final double ALTURA_TOOLBAR = 75;
+
     private ABB abb;
     private No noSobMouse;
     private final List<Viajante> viajantes = new ArrayList<>();
+    private final ControladorCamera controlador = new ControladorCamera();
 
     private double espHor = 45;
     private double espVert = 55;
@@ -74,7 +78,14 @@ public class JanelaSimuladorABB extends EngineFrame {
             return;
         }
 
-        noSobMouse = ( mouse != null && !modo.contem( mouse ) ) ? abb.buscarPorClique( mouse ) : null;
+        boolean sobToolbar = mouse != null
+                && ( mouse.y < ALTURA_TOOLBAR || modo.contem( mouse ) );
+
+        Vector2 mundo = ( mouse != null && !sobToolbar ) ? controlador.telaParaMundo( mouse ) : null;
+        noSobMouse = mundo != null ? abb.buscarPorClique( mundo ) : null;
+        
+
+        controlador.atualizar( this, mouse, sobToolbar || noSobMouse != null );
 
         if ( isMouseButtonPressed( MOUSE_BUTTON_LEFT ) && noSobMouse != null ) {
             removerChave( noSobMouse.c );
@@ -97,6 +108,13 @@ public class JanelaSimuladorABB extends EngineFrame {
     public void draw() {
         clearBackground( Tema.FUNDO );
 
+        beginMode2D( controlador.camera() );
+        abb.desenhar( this, noSobMouse );
+        for ( Viajante v : viajantes ) {
+            v.desenhar( this );
+        }
+        endMode2D();
+
         fillRectangle( 10, 10, 880, 55, Tema.PAINEL );
         drawRectangle( 10, 10, 880, 55, Tema.BORDA );
         drawText( "Chave:", 20, 31, 18, Tema.TEXTO );
@@ -105,12 +123,6 @@ public class JanelaSimuladorABB extends EngineFrame {
         btnInserir.desenhar( this );
         btnLimpar.desenhar( this );
         btnVoltar.desenhar( this );
-
-        abb.desenhar( this, noSobMouse );
-
-        for ( Viajante v : viajantes ) {
-            v.desenhar( this );
-        }
 
         modo.desenhar( this );
     }

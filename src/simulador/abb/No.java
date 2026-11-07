@@ -2,7 +2,7 @@ package simulador.abb;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
-import simulador.Tema;
+import simulador.ui.Tema;
 
 /**
  * Nó da árvore com o estado das animações.

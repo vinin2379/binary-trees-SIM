@@ -1,4 +1,4 @@
-package simulador;
+package simulador.ui;
 
 import java.awt.Color;
 

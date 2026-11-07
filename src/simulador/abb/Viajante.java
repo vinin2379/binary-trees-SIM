@@ -5,7 +5,7 @@ import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import simulador.Tema;
+import simulador.ui.Tema;
 
 /**
  * Círculo com o valor da chave que percorre a árvore no modo didático.
