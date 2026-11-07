@@ -219,14 +219,17 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         clearBackground( Tema.FUNDO );
 
         beginMode2D( controlador.camera() );
+        arvore.desenharFundo( this );
         arvore.desenhar( this, noSobMouse );
-        if ( modo.ativo() && noSobMouse != null && fase == Fase.NENHUMA ) {
-            desenharBalanco( noSobMouse );
-        }
         for ( Viajante v : viajantes ) {
             v.desenhar( this );
         }
         endMode2D();
+
+        String leg = arvore.legenda();
+        if ( leg != null && fase != Fase.NENHUMA ) {
+            drawText( leg, 10, 575, 14, Tema.TEXTO );
+        }
 
         comDeslocamento( -desl( INICIO_PAINEL, DUR_ITEM, DESLOC_TOOLBAR ), () -> {
             fillRectangle( 10, 10, 880, 55, Tema.PAINEL );
@@ -245,6 +248,14 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
     
     /** Pinta a subárvore direita de verde e a esquerda de vermelho, e mostra direita - esquerda acima do nó. */
     private void desenharBalanco( No no ) {
+        String rotulo = arvore.textoHover( no );
+        if ( rotulo != null ) {
+            int tam = 14;
+            int larg = measureText( rotulo, tam );
+            drawText( rotulo, no.pos.x - larg / 2.0, no.pos.y - no.raio - 14, tam, Tema.TEXTO );
+            return;
+        }
+   
         int esq = arvore.alturaSubarvore( no.esq );
         int dir = arvore.alturaSubarvore( no.d );
         pintarSubarvore( no.d, Tema.VERDE );

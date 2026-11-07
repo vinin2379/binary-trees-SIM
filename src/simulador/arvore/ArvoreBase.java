@@ -30,6 +30,10 @@ public abstract class ArvoreBase {
     private final Set<No> envolvidos = new HashSet<>();
     private Giro giroAtual;
     private boolean girosLiberados;
+    private double ultEspHor, ultEspVert;
+    private int ultMargemHor, ultMargemVert;
+    private boolean temLayout;
+    
 
     public abstract No inserir( int c );
 
@@ -89,6 +93,11 @@ public abstract class ArvoreBase {
      * todos os nós tocados entram num único giro coletivo.
      */
     public void atualizarNos( double espHor, double espVert, int margemHor, int margemVert ) {
+        ultEspHor = espHor;
+        ultEspVert = espVert;
+        ultMargemHor = margemHor;
+        ultMargemVert = margemVert;
+        temLayout = true;
         ranqueAtual = 0;
         nosDesenho.clear();
         atualizarNos( raiz, null, 0, espHor, espVert, margemHor, margemVert );
@@ -119,7 +128,7 @@ public abstract class ArvoreBase {
             double y = margemVert + espVert * no.nivel;
             if ( envolvidos.contains( no ) ) {
                 no.alvo.x = x;
-                no.alvo.y = y;
+                no.alvo.y = margemVert + espVert * nivelLayout( no, no.nivel );
             } else {
                 no.definirAlvo( x, y, mudouPai && usaArco() );
             }
@@ -173,11 +182,11 @@ public abstract class ArvoreBase {
         for ( No no : todos ) {
             if ( no.paiAntigo != null && no.progressoAntigo > 0 ) {
                 double f = Math.min( no.linkVisivel, no.paiAntigo.linkVisivel );
-                desenharAresta( e, no.paiAntigo.pos, no.pos, no.progressoAntigo * f, 0 );
+                desenharAresta( e, no.paiAntigo.pos, no.pos, no.progressoAntigo * f, 0, corLink( no ) );
             }
             if ( no.pai != null && no.progressoLinha > 0 ) {
                 double f = Math.min( no.linkVisivel, no.pai.linkVisivel );
-                desenharAresta( e, no.pai.pos, no.pos, no.progressoLinha * f, no.pulsoLinha );
+                desenharAresta( e, no.pai.pos, no.pos, no.progressoLinha * f, no.pulsoLinha, corLink( no ) );
             }
         }
 
@@ -186,8 +195,12 @@ public abstract class ArvoreBase {
         }
     }
 
+    private static Color corLink( No no ) {
+        return no.vermelho ? Tema.VERMELHO : EngineFrame.BLACK;
+    }
+
     protected static void desenharAresta( EngineFrame e, Vector2 pai, Vector2 filho,
-            double p, double pulso ) {
+            double p, double pulso, Color cor ) {
         if ( p < 0.01 ) {
             return;
         }
@@ -198,7 +211,7 @@ public abstract class ArvoreBase {
         double bx = mx + ( filho.x - mx ) * p;
         double by = my + ( filho.y - my ) * p;
 
-        e.drawLine( ax, ay, bx, by, EngineFrame.BLACK );
+        e.drawLine( ax, ay, bx, by, cor );
 
         if ( pulso > 0 && Math.sin( pulso * 4 * Math.PI ) > 0 ) {
             e.drawLine( ax, ay, bx, by, EngineFrame.WHITE );
@@ -284,5 +297,35 @@ public abstract class ArvoreBase {
     public int alturaSubarvore( No n ) {
         return n == null ? 0 : n.altura;
     }
-   
+    
+    /** Chamado depois de remover/inserir para recalcular pais e layout. Padrão: nada. */
+    protected void aoAlterarEstrutura() {
+    }
+    
+    /** Recalcula o layout com os últimos espaçamentos usados. */
+    public void reorganizar() {
+        if ( temLayout ) {
+            atualizarNos( ultEspHor, ultEspVert, ultMargemHor, ultMargemVert );
+        }
+    }
+
+    /** Nível usado no desenho (y). Padrão: a profundidade normal. */
+    protected int nivelLayout( No no, int nivelPadrao ) {
+        return nivelPadrao;
+    }
+
+    /** Texto mostrado no hover do nó. Padrão: nenhum (a janela mostra o balanço). */
+    public String textoHover( No n ) {
+        return null;
+    }
+
+    /** Legenda do caso em andamento, mostrada na janela. Padrão: nenhuma. */
+    public String legenda() {
+        return null;
+    }
+
+    /** Desenho de fundo (ex.: caixa do 4-node), chamado antes dos nós. Padrão: nada. */
+    public void desenharFundo( EngineFrame e ) {
+    }
+
 }

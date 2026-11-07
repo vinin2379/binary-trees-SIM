@@ -27,6 +27,8 @@ public class No {
     public int altura = 1;
     /** Usado pela Rubro-Negra. */
     public boolean vermelho;
+    /** Intensidade de vermelho animada (0 a 1), para transições suaves de cor. */
+    public double intensidadeVermelho;
 
     public boolean aguardando;
     public boolean removendo;
@@ -34,9 +36,6 @@ public class No {
     public double progressoLinha = 1;
     public double progressoAntigo;
     public double pulsoLinha;
-    
-    public String textoBalanco;
-    
     /** Realce de 0 a 1, aceso quando o nó participa de uma rotação. */
     public double destaque;
 
@@ -46,8 +45,9 @@ public class No {
     public double linkVisivel = 1;
     /** Quando true, a ligação com o pai não cresce. */
     public boolean ligacaoBloqueada;
-    /** Quando true, o nó pisca em vermelho (desbalanceamento acima de N). */
+    /** Quando true, o nó pisca (desbalanceamento acima de N, ou violação na RB). */
     public boolean piscando;
+
     /** Cor usada enquanto o nó pisca. Cada árvore escolhe a sua. */
     public Color corPisca = Tema.VERMELHO;
 
@@ -97,6 +97,8 @@ public class No {
     }
 
     public void animar( double delta, double vel ) {
+        intensidadeVermelho = suavizar( intensidadeVermelho, vermelho ? 0.5 : 0, 8 * vel, delta );
+
         if ( piscando ) {
             tPisca += delta * vel;
         }
@@ -163,6 +165,7 @@ public class No {
         }
 
         Color base = hover ? Tema.ITEM_HOVER : Tema.ITEM;
+        
         if ( piscando ) {
             base = Tema.mistura( base, corPisca, 0.5 + 0.5 * Math.sin( tPisca * 12 ) );
         }
@@ -190,6 +193,11 @@ public class No {
         return ( dx * dx + dy * dy ) <= ( raio * raio );
     }
 
+    /** Aproxima atual de destino com taxa exponencial, independente do FPS. */
+    private static double suavizar( double atual, double destino, double taxa, double dt ) {
+        return atual + ( destino - atual ) * ( 1 - Math.exp( -taxa * Math.min( dt, 1.0 / 30 ) ) );
+    }
+
     private static double quadratica( double a, double c, double b, double t ) {
         double u = 1 - t;
         return u * u * a + 2 * u * t * c + t * t * b;
@@ -198,8 +206,6 @@ public class No {
     private static double easeInOutCubic( double t ) {
         return t < 0.5 ? 4 * t * t * t : 1 - Math.pow( -2 * t + 2, 3 ) / 2;
     }
-    
-    
 
     @Override
     public String toString() {

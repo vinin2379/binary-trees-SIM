@@ -8,6 +8,7 @@ import java.awt.Point;
 import simulador.abb.JanelaSimuladorABB;
 import simulador.ui.Tema;
 import simulador.avl.JanelaSimuladorAVL;
+import simulador.rb.JanelaSimuladorRB;
 
 /**
  * Janela do menu. Título e nomes entram letra a letra; ao escolher um simulador,
@@ -112,7 +113,7 @@ public class Main extends EngineFrame {
         itens = new Item[] {
             new Item( "ABB", "Árvore Binária de Busca", 0, true ),
             new Item( "AVL", "Árvore AVL", 1, true ),
-            new Item( "RN", "Rubro-Negra (em breve)", 2, false ),
+            new Item( "RN", "Rubro-Negra", 2, true),
             new Item( "Sair", "Sair", 3, true )
         };
 
@@ -388,13 +389,15 @@ public class Main extends EngineFrame {
     }
 
     private void executarAcao( int acao ) {
-        if ( acao == 0 || acao == 1 ) {
+        if ( acao >= 0 && acao <= 2 ) {
             posMenu = getLocation();
             setLocation( -3000, -3000 );
             if ( acao == 0 ) {
                 new Thread( () -> new JanelaSimuladorABB() ).start();
-            } else {
+            } else if ( acao == 1 ) {
                 new Thread( () -> new JanelaSimuladorAVL() ).start();
+            } else {
+                new Thread( () -> new JanelaSimuladorRB() ).start();
             }
         } else if ( acao == 3 ) {
             System.exit( 0 );
