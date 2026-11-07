@@ -4,12 +4,14 @@ import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.core.utils.ColorUtils;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
+import java.awt.Point;
 import simulador.abb.JanelaSimuladorABB;
 import simulador.ui.Tema;
 
 /**
- * Janela principal: título e nomes aparecem letra a letra, depois o menu circular.
- * Ao escolher um simulador, tudo sai na ordem inversa antes de abrir a janela.
+ * Janela do menu. Título e nomes entram letra a letra; ao escolher um simulador,
+ * menu, nomes e título saem. A janela é levada para fora da tela (em vez de
+ * escondida) para continuar desenhando e voltar depois.
  *
  * @author Vinícius Lima Sobon
  */
@@ -36,15 +38,14 @@ public class Main extends EngineFrame {
     private static final double Y_NOMES = 540;
     private static final double CENTRO_Y = 340;
 
-    // animação de entrada das letras
     private static final double DURACAO_LETRA = 0.5;
     private static final double ATRASO_POR_LETRA = 0.02;
     private static final double DESLOCAMENTO_Y = 30;
 
-    // animação de saída: menu, nomes e título, nessa ordem
-    private static final double DURACAO_SAIDA_MENU = 0.4;
-    private static final double INICIO_SAIDA_NOMES = 0.3;
-    private static final double INICIO_SAIDA_TITULO = 0.6;
+    // saída: menu e nomes juntos, depois o título
+    private static final double DURACAO_SAIDA_MENU = 0.45;
+    private static final double INICIO_SAIDA_NOMES = 0.0;
+    private static final double INICIO_SAIDA_TITULO = 0.4;
     private static final double DURACAO_SAIDA_LETRA = 0.4;
     private static final double ATRASO_SAIDA_LETRA = 0.025;
     private static final double DESLOCAMENTO_SAIDA = 40;
@@ -90,14 +91,13 @@ public class Main extends EngineFrame {
 
     private double tempoRevelacao;
     private boolean revelacaoTerminou;
+    private double progressoTrigger;
 
-    // saída
     private boolean saindo;
     private double tempoSaida;
     private int acaoPendente = -1;
 
-    // entrada do botão do menu
-    private double progressoTrigger;
+    private Point posMenu;
 
     public Main() {
         super( LARG, ALT, "Simulador de Árvores Binárias", 60, true );
@@ -117,9 +117,8 @@ public class Main extends EngineFrame {
 
         for ( int i = 0; i < itens.length; i++ ) {
             itens[i].fase = i * 1.7;
-            itens[i].pos = new Vector2( centro.x, centro.y );
-            itens[i].alvo = new Vector2( centro.x, centro.y );
         }
+        reiniciarEntrada();
     }
 
     @Override
@@ -130,7 +129,13 @@ public class Main extends EngineFrame {
         }
 
         if ( saindo ) {
-            atualizarSaida( delta );
+            tempoSaida += delta;
+            double fimSaida = Math.max( DURACAO_SAIDA_MENU,
+                    INICIO_SAIDA_TITULO + TITULO.length() * ATRASO_SAIDA_LETRA + DURACAO_SAIDA_LETRA );
+            if ( tempoSaida >= fimSaida ) {
+                saindo = false;
+                executarAcao( acaoPendente );
+            }
             return;
         }
 
@@ -145,7 +150,6 @@ public class Main extends EngineFrame {
             }
         }
 
-        // entrada do botão: cresce de 0 a 1 com a mola de ui.Mola
         if ( revelacaoTerminou && progressoTrigger < 1 ) {
             progressoTrigger = Math.min( 1, progressoTrigger + delta * 1.8 );
         }
@@ -204,6 +208,7 @@ public class Main extends EngineFrame {
     }
 
     @Override
+    
     public void draw() {
         clearBackground( Tema.FUNDO );
 
@@ -215,96 +220,132 @@ public class Main extends EngineFrame {
         desenharRevelado( TITULO, TAM_TITULO, Y_TITULO, 0 );
         desenharRevelado( NOMES, TAM_NOMES, Y_NOMES, TITULO.length() );
 
-        if ( !revelacaoTerminou ) {
-            return;
-        }
-
-        // botão do menu com entrada suave
         double entrada = easeOutBack( progressoTrigger );
-        double raioTrigger = RAIO_TRIGGER * Math.max( 0, entrada );
         double yTrigger = centro.y + ( 1 - entrada ) * 40;
 
+        desenharItens( 0 );
+
+        double dx = tremor > 0 ? Math.sin( tempo * 60 ) * 2 : 0;
+        desenharTrigger( centro.x + dx, yTrigger, RAIO_TRIGGER * Math.max( 0, entrada ), entrada > 0.5 );
+    }
+
+    /**
+     * Desenha os itens do menu. saida vai de 0 (menu normal) a 1 (menu totalmente
+     * recolhido no centro e invisível).
+     */
+    private void desenharItens( double saida ) {
+        double k = 1 - saida;
         for ( Item it : itens ) {
-            if ( it.alpha <= 0.01 ) {
+            double fator = ( it.ativo ? it.alpha : it.alpha * 0.5 ) * k;
+            if ( fator <= 0.01 ) {
                 continue;
             }
 
-            double fator = it.ativo ? it.alpha : it.alpha * 0.5;
-            double raio = RAIO_ITEM * it.escala;
-            Color corFundo = ColorUtils.fade( it.hover ? Tema.ITEM_HOVER : Tema.ITEM, fator );
+            double bx = lerp( it.pos.x, centro.x, saida );
+            double by = lerp( it.pos.y, centro.y, saida );
+            double raio = RAIO_ITEM * it.escala * k;
+            boolean destacado = it.hover && saida == 0;
+
+            Color corFundo = ColorUtils.fade( destacado ? Tema.ITEM_HOVER : Tema.ITEM, fator );
             Color corTexto = ColorUtils.fade( Tema.TEXTO, fator );
 
-            Vector2 p = posVisual( it );
+            Vector2 p = posVisual( it, bx, by );
             fillCircle( p, raio, corFundo );
 
             int larg = measureText( it.icone, TAM_ICONE );
             drawText( it.icone, p.x - larg / 2.0, p.y - TAM_ICONE / 3.0, TAM_ICONE, corTexto );
 
-            if ( it.hover && it.alpha > 0.5 ) {
+            if ( destacado && it.alpha > 0.5 ) {
                 int largRotulo = measureText( it.rotulo, TAM_ROTULO );
                 drawText( it.rotulo, p.x - largRotulo / 2.0, p.y + raio + 6, TAM_ROTULO, Tema.TEXTO );
             }
         }
+    }
 
-        double dx = tremor > 0 ? Math.sin( tempo * 60 ) * 2 : 0;
-        Vector2 pc = new Vector2( centro.x + dx, yTrigger );
-        fillCircle( pc, raioTrigger, triggerHover ? Tema.TRIGGER_HOVER : Tema.TRIGGER );
-
-        if ( entrada > 0.5 ) {
+    private void desenharTrigger( double x, double y, double raio, boolean mostrarTexto ) {
+        if ( raio <= 0.5 ) {
+            return;
+        }
+        fillCircle( new Vector2( x, y ), raio, triggerHover ? Tema.TRIGGER_HOVER : Tema.TRIGGER );
+        if ( mostrarTexto ) {
             String txt = aberto ? "X" : "MENU";
             int tam = 15;
             int larg = measureText( txt, tam );
-            drawText( txt, pc.x - ( larg / 2.0 ) + 1, pc.y - 5, tam, Tema.TEXTO_CLARO );
+            drawText( txt, x - ( larg / 2.0 ) + 1, y - 5, tam, Tema.TEXTO_CLARO );
         }
     }
 
-    /** Entrada das letras: sobem e aparecem, uma a uma. */
-    private void desenharRevelado( String texto, int tamanho, double y, int deslocamentoLetras ) {
+    /**
+     * Chamado pela janela do simulador ao clicar em "Voltar".
+     * Traz a janela de volta e repete a animação de entrada.
+     */
+    public void mostrar() {
+        if ( posMenu != null ) {
+            setLocation( posMenu );
+        }
+        toFront();
+        reiniciarEntrada();
+        // repinta já no primeiro frame, sem depender da revelação
+        clearBackground( Tema.FUNDO );
+    }
+
+    private void reiniciarEntrada() {
+        tempoRevelacao = 0;
+        revelacaoTerminou = false;
+        progressoTrigger = 0;
+        aberto = false;
+        tempoAberto = 0;
+        saindo = false;
+        tempoSaida = 0;
+        for ( Item it : itens ) {
+            it.pos = new Vector2( centro.x, centro.y );
+            it.vel = new Vector2();
+            it.alvo = new Vector2( centro.x, centro.y );
+            it.pendente = false;
+            it.alpha = 0;
+            it.escala = 1;
+            it.hover = false;
+            it.hoverAnt = false;
+        }
+    }
+
+    private void desenharRevelado( String texto, int tamanho, double y, int deslocamento ) {
         int larguraTotal = measureText( texto, tamanho );
         double x = LARG / 2.0 - larguraTotal / 2.0;
-
         for ( int i = 0; i < texto.length(); i++ ) {
             String s = String.valueOf( texto.charAt( i ) );
-            double inicio = ( deslocamentoLetras + i ) * ATRASO_POR_LETRA;
+            double inicio = ( deslocamento + i ) * ATRASO_POR_LETRA;
             double progresso = ( tempoRevelacao - inicio ) / DURACAO_LETRA;
             if ( progresso > 0 ) {
-                double e = easeInOut( Math.min( 1, progresso ) );
-                double dy = ( 1 - e ) * DESLOCAMENTO_Y;
-                drawText( s, x, y + dy, tamanho, ColorUtils.fade( Tema.TEXTO, e ) );
+                double f = easeInOut( Math.min( 1, progresso ) );
+                drawText( s, x, y + ( 1 - f ) * DESLOCAMENTO_Y, tamanho, ColorUtils.fade( Tema.TEXTO, f ) );
             }
             x += measureText( s, tamanho );
         }
     }
 
-    /** Saída: menu, depois nomes da esquerda para a direita, depois o título. */
+    /** Saída: menu recolhe enquanto os nomes saem da esquerda para a direita; depois o título. */
     private void desenharSaida() {
-        double pMenu = Math.min( 1, tempoSaida / DURACAO_SAIDA_MENU );
-        if ( pMenu < 1 ) {
-            double e = 1 - easeInOut( pMenu );
-            drawText( "", 0, 0, 1, Tema.TEXTO );
-            fillCircle( centro, RAIO_TRIGGER * e, Tema.TRIGGER );
-        }
+        double eMenu = easeInOut( Math.min( 1, tempoSaida / DURACAO_SAIDA_MENU ) );
+        desenharItens( eMenu );
+        desenharTrigger( centro.x, centro.y, RAIO_TRIGGER * ( 1 - eMenu ), false );
 
-        desenharLetrasSaindo( NOMES, TAM_NOMES, Y_NOMES, INICIO_SAIDA_NOMES, true );
-        desenharLetrasSaindo( TITULO, TAM_TITULO, Y_TITULO, INICIO_SAIDA_TITULO, true );
+        desenharLetrasSaindo( NOMES, TAM_NOMES, Y_NOMES, INICIO_SAIDA_NOMES );
+        desenharLetrasSaindo( TITULO, TAM_TITULO, Y_TITULO, INICIO_SAIDA_TITULO );
     }
 
-    /** Letras saindo: cada uma sobe e some, da esquerda para a direita. */
-    private void desenharLetrasSaindo( String texto, int tamanho, double y, double inicioSaida, boolean daEsquerda ) {
+    private void desenharLetrasSaindo( String texto, int tamanho, double y, double inicioSaida ) {
         int larguraTotal = measureText( texto, tamanho );
         double x = LARG / 2.0 - larguraTotal / 2.0;
-
         for ( int i = 0; i < texto.length(); i++ ) {
             String s = String.valueOf( texto.charAt( i ) );
             double inicio = inicioSaida + i * ATRASO_SAIDA_LETRA;
             double progresso = ( tempoSaida - inicio ) / DURACAO_SAIDA_LETRA;
             if ( progresso < 1 ) {
-                double t = Math.max( 0, progresso );
-                double e = easeInOut( t );
-                double dy = -e * DESLOCAMENTO_SAIDA;
-                double alfa = 1 - e;
+                double f = easeInOut( Math.max( 0, progresso ) );
+                double alfa = 1 - f;
                 if ( alfa > 0.01 ) {
-                    drawText( s, x, y + dy, tamanho, ColorUtils.fade( Tema.TEXTO, alfa ) );
+                    drawText( s, x, y - f * DESLOCAMENTO_SAIDA, tamanho, ColorUtils.fade( Tema.TEXTO, alfa ) );
                 }
             }
             x += measureText( s, tamanho );
@@ -315,15 +356,8 @@ public class Main extends EngineFrame {
         saindo = true;
         tempoSaida = 0;
         acaoPendente = acao;
-    }
-
-    /** Avança a saída. Quando termina, executa a ação do simulador escolhido. */
-    private void atualizarSaida( double delta ) {
-        tempoSaida += delta;
-        double fimSaida = INICIO_SAIDA_TITULO + TITULO.length() * ATRASO_SAIDA_LETRA + DURACAO_SAIDA_LETRA;
-        if ( tempoSaida >= fimSaida ) {
-            saindo = false;
-            executarAcao( acaoPendente );
+        for ( Item it : itens ) {
+            it.hover = false;
         }
     }
 
@@ -340,7 +374,21 @@ public class Main extends EngineFrame {
         }
     }
 
-    /** Mesmo ease do botão de entrada, com leve ultrapassagem. */
+    private void executarAcao( int acao ) {
+        if ( acao == 0 ) {
+            // leva a janela para fora da tela em vez de esconder: continua desenhando
+            posMenu = getLocation();
+            setLocation( -3000, -3000 );
+            new Thread( () -> new JanelaSimuladorABB() ).start();
+        } else if ( acao == 3 ) {
+            System.exit( 0 );
+        }
+    }
+
+    private static double lerp( double a, double b, double t ) {
+        return a + ( b - a ) * t;
+    }
+
     private static double easeOutBack( double t ) {
         double c1 = 1.70158;
         double c3 = c1 + 1;
@@ -359,45 +407,17 @@ public class Main extends EngineFrame {
         );
     }
 
-    private Vector2 posVisual( Item it ) {
+    private Vector2 posVisual( Item it, double bx, double by ) {
         double ox = Math.sin( it.tempo * 0.9 + it.fase ) * 1.5;
         double oy = Math.cos( it.tempo * 0.7 + it.fase * 1.3 ) * 2;
         if ( it.chacoalhar > 0 ) {
             ox += Math.sin( it.chacoalhar * 55 ) * ( it.chacoalhar / 0.35 * 3 );
         }
-        return new Vector2( it.pos.x + ox, it.pos.y + oy );
+        return new Vector2( bx + ox, by + oy );
     }
 
     private double duracaoTotalRevelacao() {
-        int total = TITULO.length() + NOMES.length();
-        return total * ATRASO_POR_LETRA + DURACAO_LETRA;
-    }
-
-    /**
-     * Mostra o menu de novo, usado pelo botão "Voltar" dos simuladores.
-     */
-    public void mostrar() {
-        setVisible( true );
-        aberto = false;
-        tempoAberto = 0;
-        saindo = false;
-        for ( Item it : itens ) {
-            it.pos = new Vector2( centro.x, centro.y );
-            it.vel = new Vector2();
-            it.alvo = new Vector2( centro.x, centro.y );
-            it.pendente = false;
-            it.alpha = 0;
-            it.escala = 1;
-        }
-    }
-
-    private void executarAcao( int acao ) {
-        if ( acao == 0 ) {
-            setVisible( false );
-            new Thread( () -> new JanelaSimuladorABB() ).start();
-        } else if ( acao == 3 ) {
-            System.exit( 0 );
-        }
+        return ( TITULO.length() + NOMES.length() ) * ATRASO_POR_LETRA + DURACAO_LETRA;
     }
 
     public static void main( String[] args ) {
