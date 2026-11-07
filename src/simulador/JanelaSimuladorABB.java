@@ -21,7 +21,8 @@ public class JanelaSimuladorABB extends EngineFrame {
     private CampoTexto campoValor;
     private BotaoEstilizado btnInserir;
     private BotaoEstilizado btnVoltar;
-
+    private BotaoEstilizado btnLimpar;
+    
     public JanelaSimuladorABB() {
         super( 900, 600, "Simulador: Árvore Binária de Busca (ABB)", 60, true );
     }
@@ -32,6 +33,8 @@ public class JanelaSimuladorABB extends EngineFrame {
 
         campoValor = new CampoTexto( 90, 20, 110, 36 );
         btnInserir = new BotaoEstilizado( 225, 20, 110, 36, "Inserir",
+                Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
+        btnLimpar = new BotaoEstilizado( 340, 20, 110, 36, "Limpar",
                 Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
         btnVoltar = new BotaoEstilizado( 780, 20, 100, 36, "Voltar",
                 Tema.ITEM, Tema.ITEM_HOVER, Tema.TEXTO );
@@ -44,6 +47,11 @@ public class JanelaSimuladorABB extends EngineFrame {
 
         if ( btnInserir.atualizar( this ) || campoValor.enterFoiPressionado() ) {
             executarInsercao();
+        }
+        
+        if ( btnLimpar.atualizar( this ) ) {
+            abb.limpar();
+            noSobMouse = null;
         }
         
 
@@ -73,6 +81,7 @@ public class JanelaSimuladorABB extends EngineFrame {
         campoValor.desenhar( this );
         btnInserir.desenhar( this );
         btnVoltar.desenhar( this );
+        btnLimpar.desenhar(this);
 
         abb.desenhar( this, noSobMouse );
     }
@@ -84,6 +93,7 @@ public class JanelaSimuladorABB extends EngineFrame {
         dispose();
     }
 
+    
     private void executarInsercao() {
         try {
             String texto = campoValor.getValor().trim();

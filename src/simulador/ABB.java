@@ -103,6 +103,12 @@ public class ABB {
     public void delete( int c ) {
         raiz = delete( raiz, c );
     }
+    
+    
+    public void limpar() {
+        raiz = null;
+        nosDesenho = new ArrayList<>();
+    }
 
     private No delete( No no, int c ) {
         if ( no == null ) return null;
