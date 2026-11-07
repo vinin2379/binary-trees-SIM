@@ -2,18 +2,19 @@ package simulador.arvore;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
+import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.awt.Color;
-import simulador.ui.Tema;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import simulador.ui.Tema;
 
 /**
- * 
+ * Parte comum das árvores. Uma operação inteira (inserção ou remoção com
+ * rotações) é animada de uma vez: os nós que giram entram num único giro coletivo.
  *
  * @author Vinícius Lima Sobon
  */
@@ -25,13 +26,13 @@ public abstract class ArvoreBase {
     protected final List<No> fantasmas = new ArrayList<>();
 
     /** Nós tocados pelas rotações da operação em curso. */
-    private final Set<No> envolvidos = new HashSet<>();
+    protected final Set<No> envolvidos = new HashSet<>();
     private Giro giroAtual;
     private boolean girosLiberados;
+
     private double ultEspHor, ultEspVert;
     private int ultMargemHor, ultMargemVert;
     private boolean temLayout;
-    
 
     public abstract No inserir( int c );
 
@@ -55,6 +56,113 @@ public abstract class ArvoreBase {
         no.aguardando = false;
         no.removendo = true;
         fantasmas.add( no );
+    }
+
+    /** Chamado depois de remover/inserir para recalcular pais e layout. Padrão: nada. */
+    protected void aoAlterarEstrutura() {
+    }
+
+    /** Altura de uma subárvore (0 se nula). Usada pela conta de balanceamento na janela. */
+    public int alturaSubarvore( No n ) {
+        return n == null ? 0 : n.altura;
+    }
+
+    /** Recalcula o layout com os últimos espaçamentos usados. */
+    public void reorganizar() {
+        reorganizarComArco();
+    }
+
+    /** Recalcula o layout e faz todos os nós percorrerem uma curva até o novo destino. */
+    protected void reorganizarComArco() {
+        if ( !temLayout ) {
+            return;
+        }
+        for ( No no : nosDesenho ) {
+            no.forcarArco = true;
+        }
+        atualizarNos( ultEspHor, ultEspVert, ultMargemHor, ultMargemVert );
+        for ( No no : nosDesenho ) {
+            no.forcarArco = false;
+        }
+    }
+
+    /** Nível usado no desenho (y). Padrão: a profundidade normal. */
+    protected int nivelLayout( No no, int nivelPadrao ) {
+        return nivelPadrao;
+    }
+
+    /** Texto mostrado no hover do nó. Padrão: nenhum. */
+    public String textoHover( No n ) {
+        return null;
+    }
+
+    /** Legenda do caso em andamento, mostrada na janela. Padrão: nenhuma. */
+    public String legenda() {
+        return null;
+    }
+
+    /** Desenho de fundo (ex.: caixa do 4-node), chamado antes dos nós. Padrão: nada. */
+    public void desenharFundo( EngineFrame e ) {
+    }
+
+    /** Versão didática da inserção: só a BST, sem rebalancear. */
+    public No inserirSemBalancear( int c ) {
+        return inserir( c );
+    }
+
+    /** Rebalanceia a árvore, registrando as rotações. Padrão: nada. */
+    public void rebalancear() {
+    }
+
+    /** Nós que devem piscar antes do rebalanceamento. Padrão: nenhum. */
+    public List<No> nosAlertados() {
+        return new ArrayList<>();
+    }
+
+    /** Cor do piscar desta árvore. */
+    public Color corAlerta() {
+        return Tema.VERMELHO;
+    }
+
+    /**
+     * Nós que girariam no próximo rebalanceamento. A árvore é simulada e
+     * restaurada ao final, então nada muda de fato.
+     */
+    public List<No> nosQueGiram() {
+        List<No> todos = new ArrayList<>();
+        coletarNos( raiz, todos );
+
+        Map<No, No[]> ponteiros = new HashMap<>();
+        Map<No, Integer> alturas = new HashMap<>();
+        for ( No n : todos ) {
+            ponteiros.put( n, new No[] { n.esq, n.d } );
+            alturas.put( n, n.altura );
+        }
+
+        No raizAntiga = raiz;
+        envolvidos.clear();
+        rebalancear();
+        List<No> grupo = new ArrayList<>( envolvidos );
+        envolvidos.clear();
+
+        raiz = raizAntiga;
+        for ( No n : todos ) {
+            No[] p = ponteiros.get( n );
+            n.esq = p[0];
+            n.d = p[1];
+            n.altura = alturas.get( n );
+            n.destaque = 0;
+        }
+        return grupo;
+    }
+
+    private static void coletarNos( No n, List<No> lista ) {
+        if ( n == null ) {
+            return;
+        }
+        lista.add( n );
+        coletarNos( n.esq, lista );
+        coletarNos( n.d, lista );
     }
 
     public void limpar() {
@@ -86,21 +194,18 @@ public abstract class ArvoreBase {
         return caminho;
     }
 
-    /**
-     * Recalcula layout e pais de toda a árvore de uma vez. Se houve rotações,
-     * todos os nós tocados entram num único giro coletivo.
-     */
+    /** Recalcula layout e pais de toda a árvore de uma vez. */
     public void atualizarNos( double espHor, double espVert, int margemHor, int margemVert ) {
         ultEspHor = espHor;
         ultEspVert = espVert;
         ultMargemHor = margemHor;
         ultMargemVert = margemVert;
         temLayout = true;
+
         ranqueAtual = 0;
         nosDesenho.clear();
         atualizarNos( raiz, null, 0, espHor, espVert, margemHor, margemVert );
 
-        // o giro coletivo cuida dos nós envolvidos; os demais deslizam ou fazem arco
         List<No> grupo = new ArrayList<>();
         if ( usaArco() ) {
             for ( No no : nosDesenho ) {
@@ -123,10 +228,10 @@ public abstract class ArvoreBase {
             no.nivel = nivel;
             no.ranque = ranqueAtual++;
             double x = margemHor + espHor * no.ranque;
-            double y = margemVert + espVert * no.nivel;
+            double y = margemVert + espVert * nivelLayout( no, no.nivel );
             if ( envolvidos.contains( no ) ) {
                 no.alvo.x = x;
-                no.alvo.y = margemVert + espVert * nivelLayout( no, no.nivel );
+                no.alvo.y = y;
             } else {
                 no.definirAlvo( x, y, mudouPai && usaArco() );
             }
@@ -225,105 +330,4 @@ public abstract class ArvoreBase {
         }
         return null;
     }
-    
-    /** Versão didática da inserção: só a BST, sem rebalancear. Padrão: igual a inserir. */
-    /** Versão didática da inserção: só a BST, sem rebalancear. */
-    public No inserirSemBalancear( int c ) {
-        return inserir( c );
-    }
-
-    /** Rebalanceia a árvore, registrando as rotações. Padrão: nada. */
-    public void rebalancear() {
-    }
-
-    /** Nós que devem piscar antes do rebalanceamento. Padrão: nenhum. */
-    public List<No> nosAlertados() {
-        return new ArrayList<>();
-    }
-
-    /** Cor do piscar desta árvore. */
-    public Color corAlerta() {
-        return Tema.VERMELHO;
-    }
-    
-    public List<No> nosQueGiram() {
-        List<No> todos = new ArrayList<>();
-        coletarNos( raiz, todos );
-
-        Map<No, No[]> ponteiros = new HashMap<>();
-        Map<No, Integer> alturas = new HashMap<>();
-        for ( No n : todos ) {
-            ponteiros.put( n, new No[] { n.esq, n.d } );
-            alturas.put( n, n.altura );
-        }
-
-        No raizAntiga = raiz;
-        envolvidos.clear();
-        rebalancear();
-        List<No> grupo = new ArrayList<>( envolvidos );
-        envolvidos.clear();
-
-        raiz = raizAntiga;
-        for ( No n : todos ) {
-            No[] p = ponteiros.get( n );
-            n.esq = p[0];
-            n.d = p[1];
-            n.altura = alturas.get( n );
-            n.destaque = 0;
-        }
-        return grupo;
-    }
-
-   /** Quantidade de nós na subárvore de n (0 se n for null). */
-   public int contarSubarvore( No n ) {
-       if ( n == null ) {
-           return 0;
-       }
-       return 1 + contarSubarvore( n.esq ) + contarSubarvore( n.d );
-   }
-
-   private static void coletarNos( No n, List<No> lista ) {
-       if ( n == null ) {
-           return;
-       }
-       lista.add( n );
-       coletarNos( n.esq, lista );
-       coletarNos( n.d, lista );
-   }
-    
-   /** Altura de uma subárvore (0 se nula). Usada pela conta de balanceamento na janela. */
-    public int alturaSubarvore( No n ) {
-        return n == null ? 0 : n.altura;
-    }
-    
-    /** Chamado depois de remover/inserir para recalcular pais e layout. Padrão: nada. */
-    protected void aoAlterarEstrutura() {
-    }
-    
-    /** Recalcula o layout com os últimos espaçamentos usados. */
-    public void reorganizar() {
-        if ( temLayout ) {
-            atualizarNos( ultEspHor, ultEspVert, ultMargemHor, ultMargemVert );
-        }
-    }
-
-    /** Nível usado no desenho (y). Padrão: a profundidade normal. */
-    protected int nivelLayout( No no, int nivelPadrao ) {
-        return nivelPadrao;
-    }
-
-    /** Texto mostrado no hover do nó. Padrão: nenhum (a janela mostra o balanço). */
-    public String textoHover( No n ) {
-        return null;
-    }
-
-    /** Legenda do caso em andamento, mostrada na janela. Padrão: nenhuma. */
-    public String legenda() {
-        return null;
-    }
-
-    /** Desenho de fundo (ex.: caixa do 4-node), chamado antes dos nós. Padrão: nada. */
-    public void desenharFundo( EngineFrame e ) {
-    }
-
 }

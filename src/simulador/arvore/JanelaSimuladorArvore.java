@@ -456,4 +456,9 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         noSobMouse = null;
         campoValor.limpar();
     }
+    
+    protected ModoDidatico modoDidatico() {
+    return modo;
+}
+    
 }

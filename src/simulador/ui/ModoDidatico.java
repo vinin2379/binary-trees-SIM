@@ -1,12 +1,13 @@
 package simulador.ui;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
+import br.com.davidbuzatto.jsge.core.utils.ColorUtils;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 
 /**
- * Botão da toolbar do modo didático: ativar e velocidade da animação.
- * Controles específicos de cada árvore ficam na própria janela.
+ * Botão da toolbar do modo didático: ativar, velocidade e uma opção extra
+ * opcional (ex.: Visão 2-3 na Rubro-Negra).
  */
 public class ModoDidatico {
 
@@ -14,6 +15,7 @@ public class ModoDidatico {
     private static final double LARG_ABERTO = 240;
     private static final double ALT_CABECALHO = 36;
     private static final double ALT_ABERTO = 130;
+    private static final double ALT_ABERTO_EXTRA = 170;
     private static final double VEL_MIN = 0.5;
     private static final double VEL_MAX = 3.0;
     private static final double TRILHA_X = 18;
@@ -26,6 +28,9 @@ public class ModoDidatico {
     private boolean arrastandoVel;
     private double progresso;
     private double velocidade = 1.0;
+
+    private boolean extraSuportada;
+    private boolean extraAtiva;
 
     public ModoDidatico( double x, double y ) {
         this.x = x;
@@ -40,12 +45,22 @@ public class ModoDidatico {
         return ativo ? velocidade : 1.0;
     }
 
+    /** Liga a opção extra (checkbox abaixo da velocidade). */
+    public void suportarExtra( boolean v ) {
+        extraSuportada = v;
+    }
+
+    public boolean extraAtiva() {
+        return extraAtiva;
+    }
+
     private double largura() {
         return LARG_FECHADO + ( LARG_ABERTO - LARG_FECHADO ) * progresso;
     }
 
     private double altura() {
-        return ALT_CABECALHO + ( ALT_ABERTO - ALT_CABECALHO ) * progresso;
+        double alvo = extraSuportada ? ALT_ABERTO_EXTRA : ALT_ABERTO;
+        return ALT_CABECALHO + ( alvo - ALT_CABECALHO ) * progresso;
     }
 
     public boolean contem( Vector2 m ) {
@@ -78,6 +93,8 @@ public class ModoDidatico {
             } else if ( controlesAtivos && dentro( m, x + 10, y + 94, 216, 22 ) ) {
                 arrastandoVel = true;
                 ajustarVelocidade( m );
+            } else if ( controlesAtivos && extraSuportada && dentro( m, x + 12, y + 132, 230, 24 ) ) {
+                extraAtiva = !extraAtiva;
             } else if ( aberto && !contem( m ) ) {
                 aberto = false;
             }
@@ -125,6 +142,20 @@ public class ModoDidatico {
             e.fillRectangle( x + TRILHA_X, y + 102, TRILHA_LARG, 4, Tema.BORDA );
             double f = ( velocidade - VEL_MIN ) / ( VEL_MAX - VEL_MIN );
             e.fillCircle( new Vector2( x + TRILHA_X + f * TRILHA_LARG, y + 104 ), 7, Tema.TRIGGER );
+
+           if ( extraSuportada && progresso > 0.85 ) {
+                double a = Math.min( 1, ( progresso - 0.85 ) / 0.15 );
+                double ex = x + 18;
+                double ey = y + 140;
+                BotaoEstilizado.retanguloArredondado( e, ex - 1, ey - 1, 18, 18, 5,
+                        ColorUtils.fade( Tema.BORDA, a ) );
+                BotaoEstilizado.retanguloArredondado( e, ex, ey, 16, 16, 4,
+                        Tema.mistura( Tema.PAINEL, extraAtiva ? Tema.TRIGGER : Tema.PAINEL, a ) );
+                if ( extraAtiva ) {
+                    e.fillRectangle( ex + 5, ey + 5, 6, 6, ColorUtils.fade( Tema.PAINEL, a ) );
+                }
+                e.drawText( "Visão 2-3", x + 42, ey + 8 - 14 / 3.0, 14, ColorUtils.fade( Tema.TEXTO, a ) );
+            }
         }
     }
 

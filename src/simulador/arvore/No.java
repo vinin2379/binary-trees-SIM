@@ -27,8 +27,6 @@ public class No {
     public int altura = 1;
     /** Usado pela Rubro-Negra. */
     public boolean vermelho;
-    /** Intensidade de vermelho animada (0 a 1), para transições suaves de cor. */
-    public double intensidadeVermelho;
 
     public boolean aguardando;
     public boolean removendo;
@@ -36,6 +34,7 @@ public class No {
     public double progressoLinha = 1;
     public double progressoAntigo;
     public double pulsoLinha;
+
     /** Realce de 0 a 1, aceso quando o nó participa de uma rotação. */
     public double destaque;
 
@@ -47,9 +46,10 @@ public class No {
     public boolean ligacaoBloqueada;
     /** Quando true, o nó pisca (desbalanceamento acima de N, ou violação na RB). */
     public boolean piscando;
-
     /** Cor usada enquanto o nó pisca. Cada árvore escolhe a sua. */
     public Color corPisca = Tema.VERMELHO;
+    /** Quando true, o próximo definirAlvo percorre curva mesmo sem troca de pai. */
+    public boolean forcarArco;
 
     private boolean emArco;
     private double tArco;
@@ -75,7 +75,7 @@ public class No {
         return true;
     }
 
-    /** Define o destino do layout. Com emArco, percorre uma curva em vez de deslizar. */
+    /** Define o destino do layout. Com emArco (ou forcarArco), percorre uma curva. */
     public void definirAlvo( double x, double y, boolean emArco ) {
         if ( alvo.x == x && alvo.y == y ) {
             return;
@@ -84,7 +84,7 @@ public class No {
         alvo.y = y;
 
         double dist = Math.hypot( x - pos.x, y - pos.y );
-        if ( emArco && dist > 2 && !removendo ) {
+        if ( ( emArco || forcarArco ) && dist > 2 && !removendo ) {
             this.emArco = true;
             tArco = 0;
             arcoInicio.x = pos.x;
@@ -97,8 +97,6 @@ public class No {
     }
 
     public void animar( double delta, double vel ) {
-        intensidadeVermelho = suavizar( intensidadeVermelho, vermelho ? 0.5 : 0, 8 * vel, delta );
-
         if ( piscando ) {
             tPisca += delta * vel;
         }
@@ -165,7 +163,6 @@ public class No {
         }
 
         Color base = hover ? Tema.ITEM_HOVER : Tema.ITEM;
-        
         if ( piscando ) {
             base = Tema.mistura( base, corPisca, 0.5 + 0.5 * Math.sin( tPisca * 12 ) );
         }
@@ -191,11 +188,6 @@ public class No {
         double dx = ponto.x - pos.x;
         double dy = ponto.y - pos.y;
         return ( dx * dx + dy * dy ) <= ( raio * raio );
-    }
-
-    /** Aproxima atual de destino com taxa exponencial, independente do FPS. */
-    private static double suavizar( double atual, double destino, double taxa, double dt ) {
-        return atual + ( destino - atual ) * ( 1 - Math.exp( -taxa * Math.min( dt, 1.0 / 30 ) ) );
     }
 
     private static double quadratica( double a, double c, double b, double t ) {
