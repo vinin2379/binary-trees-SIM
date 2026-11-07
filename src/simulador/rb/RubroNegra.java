@@ -15,9 +15,7 @@ import simulador.arvore.No;
 import simulador.ui.Tema;
 
 /**
- * Árvore Rubro-Negra (LLRB, slides 78 a 94). Inserção: BST pura com nó vermelho,
- * depois correção. Remoção: algoritmo de Sedgewick para LLRB.
- * Visão 2-3: nós pretos descem um nível e ligações vermelhas ficam horizontais.
+ * Árvore Rubro-Negra.
  *
  * @author Vinícius Lima Sobon
  */
@@ -151,7 +149,7 @@ public class RubroNegra extends ArvoreBase {
         return h;
     }
 
-    /** Nós do caso causado por N (slides 87 e 88), e a legenda correspondente. */
+    /** Nós do caso causado por N, e a legenda correspondente. */
     @Override
     public List<No> nosAlertados() {
         legendaAtual = null;
@@ -173,9 +171,9 @@ public class RubroNegra extends ArvoreBase {
             No tio = ( g.esq == p ) ? g.d : g.esq;
             if ( isRed( tio ) ) {
                 r.add( tio );
-                legendaAtual = "Caso 02 (slide 88): 4-node temporário, tio vermelho → inversão de cores";
+                legendaAtual = "Caso 02: 4-node temporário, tio vermelho → inversão de cores";
             } else {
-                legendaAtual = "Caso 02 (slide 88): 4-node temporário, tio preto → rotação e inversão";
+                legendaAtual = "Caso 02: 4-node temporário, tio preto → rotação e inversão";
             }
             return r;
         }
@@ -185,9 +183,9 @@ public class RubroNegra extends ArvoreBase {
             r.add( p );
             if ( isRed( p.esq ) ) {
                 r.add( p.esq );
-                legendaAtual = "Caso 02 (slide 88): dois filhos vermelhos → inversão de cores";
+                legendaAtual = "Caso 02: dois filhos vermelhos → inversão de cores";
             } else {
-                legendaAtual = "Caso 01 (slide 87): vermelho à direita → rotação à esquerda";
+                legendaAtual = "Caso 01: vermelho à direita → rotação à esquerda";
             }
         }
         return r;
@@ -333,7 +331,7 @@ public class RubroNegra extends ArvoreBase {
         return x;
     }
 
-    /** Inversão de cores (slide 86): só muda as cores, sem giro. */
+    /** Inversão de cores: só muda as cores, sem giro. */
     private void flip( No h ) {
         h.vermelho = !h.vermelho;
         h.esq.vermelho = !h.esq.vermelho;

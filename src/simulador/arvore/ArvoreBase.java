@@ -13,9 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Parte comum das árvores. Uma operação inteira (inserção ou remoção com
- * rotações) é animada de uma vez: todos os nós que mudam de posição ou de pai
- * giram juntos, em um único giro coletivo.
+ * 
  *
  * @author Vinícius Lima Sobon
  */
