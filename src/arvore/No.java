@@ -1,39 +1,45 @@
-package simulador.abb;
+package simulador.arvore;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import simulador.ui.Tema;
 
 /**
- * Nó da árvore com o estado das animações.
+ * Nó genérico para qualquer árvore binária. Campos específicos
+ * (altura da AVL, cor da Rubro-Negra) ficam aqui e são ignorados pelas outras árvores.
  */
 public class No {
 
-    int c;
-    No esq;
-    No d;
-    No pai;
-    No paiAntigo;
+    public int c;
+    public No esq;
+    public No d;
+    public No pai;
+    public No paiAntigo;
 
-    Vector2 pos = new Vector2();
-    Vector2 alvo = new Vector2();
-    int nivel;
-    int ranque;
-    int raio;
+    public Vector2 pos = new Vector2();
+    public Vector2 alvo = new Vector2();
+    public int nivel;
+    public int ranque;
+    public int raio;
 
-    boolean aguardando;
-    boolean removendo;
-    double escala = 1;
-    double progressoLinha = 1;
-    double progressoAntigo;
-    double pulsoLinha;
+    /** Usado pela AVL. */
+    public int altura = 1;
+    /** Usado pela Rubro-Negra. */
+    public boolean vermelho;
 
-    No( int raio ) {
+    public boolean aguardando;
+    public boolean removendo;
+    public double escala = 1;
+    public double progressoLinha = 1;
+    public double progressoAntigo;
+    public double pulsoLinha;
+
+    public No( int raio ) {
         this.raio = raio;
     }
 
     /** Troca o pai: o link antigo encolhe e o novo cresce. */
-    void trocarPai( No novo ) {
+    public void trocarPai( No novo ) {
         if ( novo == pai ) {
             return;
         }
@@ -45,7 +51,7 @@ public class No {
         progressoLinha = novo == null ? 1 : 0;
     }
 
-    void animar( double delta, double vel ) {
+    public void animar( double delta, double vel ) {
         if ( removendo ) {
             escala = Math.max( 0, escala - delta * 4 * vel );
             progressoLinha = Math.max( 0, progressoLinha - delta * 3 * vel );
@@ -77,7 +83,7 @@ public class No {
         }
     }
 
-    void desenhar( EngineFrame e, boolean hover ) {
+    public void desenhar( EngineFrame e, boolean hover ) {
         if ( escala <= 0.01 ) {
             return;
         }
@@ -101,7 +107,7 @@ public class No {
         }
     }
 
-    boolean contemPonto( Vector2 ponto ) {
+    public boolean contemPonto( Vector2 ponto ) {
         double dx = ponto.x - pos.x;
         double dy = ponto.y - pos.y;
         return ( dx * dx + dy * dy ) <= ( raio * raio );

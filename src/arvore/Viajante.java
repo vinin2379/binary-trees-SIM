@@ -1,4 +1,4 @@
-package simulador.abb;
+package simulador.arvore;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
@@ -10,18 +10,18 @@ import simulador.ui.Tema;
 /**
  * Círculo com o valor da chave que percorre a árvore no modo didático.
  */
-class Viajante {
+public class Viajante {
 
     private static final int RAIO = 14;
 
     private final int valor;
     private final List<No> alvos = new ArrayList<>();
-    final No destino;
+    public final No destino;
     private final Vector2 pos;
     private int indice;
     private double tempo;
 
-    Viajante( int valor, List<No> caminho, No destino ) {
+    public Viajante( int valor, List<No> caminho, No destino ) {
         this.valor = valor;
         this.destino = destino;
         alvos.addAll( caminho );
@@ -31,10 +31,8 @@ class Viajante {
         pos = new Vector2( origem.alvo.x, origem.alvo.y - 70 );
     }
 
-    /**
-     * Retorna true quando chegou ao destino.
-     */
-    boolean atualizar( double delta, double velocidade ) {
+    /** Retorna true quando chegou ao destino. */
+    public boolean atualizar( double delta, double velocidade ) {
         tempo += delta;
         if ( indice >= alvos.size() ) {
             return true;
@@ -53,10 +51,7 @@ class Viajante {
         return indice >= alvos.size();
     }
 
-    /**
-     * Verde se a chave é maior que o nó de onde saiu (vai para a direita),
-     * vermelho se é menor (vai para a esquerda).
-     */
+    /** Verde se a chave é maior que o nó de onde saiu, vermelho se é menor. */
     private Color cor() {
         if ( indice == 0 ) {
             return Tema.TRIGGER;
@@ -65,7 +60,7 @@ class Viajante {
         return valor > anterior.c ? Tema.VERDE : Tema.VERMELHO;
     }
 
-    void desenhar( EngineFrame e ) {
+    public void desenhar( EngineFrame e ) {
         if ( indice >= alvos.size() ) {
             return;
         }

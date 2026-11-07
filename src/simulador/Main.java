@@ -216,17 +216,15 @@ public class Main extends EngineFrame {
         if ( saindo ) {
             desenharSaida();
             return;
-        }
-        
+        } else {
+            
         desenharEntrada();
+        
+        }
 
         
     }
 
-    /**
-     * Desenha os itens do menu. saida vai de 0 (menu normal) a 1 (menu totalmente
-     * recolhido no centro e invisível).
-     */
     
     private void desenharEntrada(){
         
@@ -242,6 +240,12 @@ public class Main extends EngineFrame {
         desenharTrigger( centro.x + dx, yTrigger, RAIO_TRIGGER * Math.max( 0, entrada ), entrada > 0.5 );
         
     }
+    
+    /**
+     * Desenha os itens do menu. saida vai de 0 (menu normal) a 1 (menu totalmente
+     * recolhido no centro e invisível).
+     */
+    
     private void desenharItens( double saida ) {
         double k = 1 - saida;
         for ( Item it : itens ) {

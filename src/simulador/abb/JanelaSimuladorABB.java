@@ -10,6 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import simulador.ControladorCamera;
 import simulador.Main;
+import simulador.arvore.No;
+import simulador.arvore.Viajante;
 import simulador.ui.BotaoEstilizado;
 import simulador.ui.CampoTexto;
 import simulador.ui.ModoDidatico;
