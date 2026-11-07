@@ -1,12 +1,14 @@
 package simulador;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
+import br.com.davidbuzatto.jsge.math.Vector2;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
- * @author bv110309
+ * Implementação arvore binaria de busca.
+ * 
+ * @author Vinícius Lima Sobon 
  */
 public class ABB {
     
@@ -27,7 +29,7 @@ public class ABB {
         } else {
             
             if ( c < no.c ) {
-                no.e = put( no.e, c );
+                no.esq = put( no.esq, c );
             } else if ( c > no.c ) {
                 no.d = put( no.d, c );
             } else { // c == no.c
@@ -47,7 +49,7 @@ public class ABB {
     
     private void emOrdem( No no ) {
         if ( no != null ) {
-            emOrdem( no.e );
+            emOrdem( no.esq );
             System.out.println( no );
             emOrdem( no.d );
         }
@@ -61,7 +63,7 @@ public class ABB {
     
     private void atualizarNos( No no, int nivel, double espHor, double espVert, int margemHor, int margemVert ) {
         if ( no != null ) {
-            atualizarNos( no.e, nivel + 1, espHor, espVert, margemHor, margemVert );
+            atualizarNos( no.esq, nivel + 1, espHor, espVert, margemHor, margemVert );
             no.nivel = nivel;
             no.ranque = ranqueAtual++;
             no.pos.x = margemHor + espHor * no.ranque;
@@ -71,22 +73,67 @@ public class ABB {
         }
     }
     
-    public void desenhar( EngineFrame e ) {
-        
+   public void desenhar( EngineFrame e, No sob ) {
+
         for ( No no : nosDesenho ) {
-            if ( no.e != null ) {
-                e.drawLine( no.pos, no.e.pos, EngineFrame.BLACK );
+            if ( no.esq != null ) {
+                e.drawLine( no.pos, no.esq.pos, EngineFrame.BLACK );
             }
             if ( no.d != null ) {
                 e.drawLine( no.pos, no.d.pos, EngineFrame.BLACK );
             }
         }
-        
+
         for ( No no : nosDesenho ) {
-            no.desenhar( e );
+            no.desenhar( e, no == sob );
         }
-        
+
     }
     
+    public No buscarPorClique( Vector2 mousePos ) {
+        for ( No no : nosDesenho ) {
+            if ( no.contemPonto( mousePos ) ) {
+                return no;
+            }
+        }
+        return null;
+    }
+
+    // delete
+    public void delete( int c ) {
+        raiz = delete( raiz, c );
+    }
+
+    private No delete( No no, int c ) {
+        if ( no == null ) return null;
+
+        if ( c < no.c ) {
+            no.esq = delete(no.esq, c );
+        } else if ( c > no.c ) {
+            no.d = delete( no.d, c );
+        } else {
+            // caso 1 e 2: no com 0 ou 1 filho
+            if ( no.d == null ) return no.esq;
+            if ( no.esq == null ) return no.d;
+
+            // caso 3: no com 2 filhos
+            No t = no;
+            no = min( t.d );
+            no.d = deleteMin( t.d );
+            no.esq = t.esq;
+        }
+        return no;
+    }
+
+    private No min( No no ) {
+        if ( no.esq == null ) return no;
+        return min(no.esq );
+    }
+
+    private No deleteMin( No no ) {
+        if ( no.esq == null ) return no.d;
+        no.esq = deleteMin(no.esq );
+        return no;
+    }
     
 }
