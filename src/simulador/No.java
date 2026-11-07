@@ -33,7 +33,7 @@ public class No {
 
         String label = String.valueOf( c );
         int larg = e.measureText( label, 18 );
-        e.drawText( label, pos.x - larg / 2.0, pos.y - 6, 18, Tema.TEXTO );
+        e.drawText( label, pos.x - (larg / 2.0)+1, pos.y - 4, 18, Tema.TEXTO );
 
         if ( hover ) {
             String dica = "remover";

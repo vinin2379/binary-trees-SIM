@@ -1,7 +1,6 @@
 package simulador;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
-import br.com.davidbuzatto.jsge.imgui.GuiButton;
 import br.com.davidbuzatto.jsge.imgui.GuiTextField;
 import br.com.davidbuzatto.jsge.math.Vector2;
 
@@ -21,8 +20,9 @@ public class JanelaSimuladorABB extends EngineFrame {
     private int margemVert = 120;
 
     private GuiTextField txtValor;
-    private GuiButton btnInserir;
-    private GuiButton btnRemover;
+    private BotaoEstilizado btnInserir;
+    private BotaoEstilizado btnRemover;
+    private BotaoEstilizado btnVoltar;
 
     public JanelaSimuladorABB() {
         super( 900, 600, "Simulador: Árvore Binária de Busca (ABB)", 60, true );
@@ -36,23 +36,30 @@ public class JanelaSimuladorABB extends EngineFrame {
         setDefaultFontSize( 18 );
 
         txtValor = new GuiTextField( 90, 20, 100, 35, "" );
-        btnInserir = new GuiButton( 205, 20, 100, 35, "Inserir" );
-        btnRemover = new GuiButton( 315, 20, 100, 35, "Remover" );
+        btnInserir = new BotaoEstilizado( 215, 20, 110, 36, "Inserir",
+                Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
+        btnRemover = new BotaoEstilizado( 340, 20, 110, 36, "Remover",
+                Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
+        btnVoltar = new BotaoEstilizado( 780, 20, 100, 36, "Voltar",
+                Tema.ITEM, Tema.ITEM_HOVER, Tema.TEXTO );
     }
 
     @Override
     public void update( double delta ) {
 
         txtValor.update( delta );
-        btnInserir.update( delta );
-        btnRemover.update( delta );
 
-        if ( btnInserir.isMousePressed() ) {
+        if ( btnInserir.atualizar( this ) ) {
             executarInsercao();
         }
 
-        if ( btnRemover.isMousePressed() ) {
+        if ( btnRemover.atualizar( this ) ) {
             executarRemocao();
+        }
+
+        if ( btnVoltar.atualizar( this ) ) {
+            voltarAoMenu();
+            return;
         }
 
         Vector2 mouse = getMousePositionPoint();
@@ -71,13 +78,21 @@ public class JanelaSimuladorABB extends EngineFrame {
 
         fillRectangle( 10, 10, 880, 55, Tema.PAINEL );
         drawRectangle( 10, 10, 880, 55, Tema.BORDA );
-        drawText( "Chave:", 20, 28, 18, Tema.TEXTO );
+        drawText( "Chave:", 20, 31, 18, Tema.TEXTO );
 
         txtValor.draw();
-        btnInserir.draw();
-        btnRemover.draw();
+        btnInserir.desenhar( this );
+        btnRemover.desenhar( this );
+        btnVoltar.desenhar( this );
 
         abb.desenhar( this, noSobMouse );
+    }
+
+    private void voltarAoMenu() {
+        if ( Main.instancia != null ) {
+            Main.instancia.mostrar();
+        }
+        dispose();
     }
 
     private void executarInsercao() {

@@ -15,14 +15,16 @@ public class Main extends EngineFrame {
     private static final double RAIO_TRIGGER = 24;
     private static final double RAIO_ITEM = 23;
     private static final double RAIO_CIRCULO = 120;
-    private static final double ATRASO_ABRIR = 0.03;
+    private static final double ATRASO_ABRIR = 0.1;
     private static final double ATRASO_FECHAR = 0.07;
-    private static final double TEMPO_LIBERAR_CLIQUE = 0.5;
+    private static final double TEMPO_LIBERAR_CLIQUE = 0.3;
     private static final double RIGIDEZ = 300;
     private static final double AMORTECIMENTO = 28;
     private static final double DURACAO_TREMOR = 0.35;
     private static final int TAM_ICONE = 14;
     private static final int TAM_ROTULO = 14;
+
+    static Main instancia;
 
     private static class Item {
 
@@ -59,6 +61,7 @@ public class Main extends EngineFrame {
 
     public Main() {
         super( 800, 600, "Menu - Simuladores de Árvores Binárias", 60, true );
+        instancia = this;
     }
 
     @Override
@@ -166,6 +169,23 @@ public class Main extends EngineFrame {
         drawText( txt, pc.x - ( larg / 2.0 ) + 1, pc.y - 5, tam, Tema.TEXTO_CLARO );
     }
 
+    /**
+     * Mostra o menu de novo, usado pelo botão "Voltar" dos simuladores.
+     */
+    public void mostrar() {
+        setVisible( true );
+        aberto = false;
+        tempoAberto = 0;
+        for ( Item it : itens ) {
+            it.pos = new Vector2( centro.x, centro.y );
+            it.vel = new Vector2();
+            it.alvo = new Vector2( centro.x, centro.y );
+            it.pendente = false;
+            it.alpha = 0;
+            it.escala = 1;
+        }
+    }
+
     private void alternarMenu() {
         aberto = !aberto;
         tempoAberto = 0;
@@ -189,6 +209,7 @@ public class Main extends EngineFrame {
 
     private void executarAcao( int acao ) {
         if ( acao == 0 ) {
+            setVisible( false );
             new Thread( () -> new JanelaSimuladorABB() ).start();
         } else if ( acao == 3 ) {
             System.exit( 0 );
