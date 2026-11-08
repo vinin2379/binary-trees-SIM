@@ -23,6 +23,7 @@ class Giro {
     private double cx;
     private double cy;
     private double t;
+    private double opacidadeLigacao = 1;
     private boolean iniciado;
 
     Giro( List<No> nos ) {
@@ -47,9 +48,12 @@ class Giro {
         return t >= INICIO_GIRO && t < FIM_GIRO;
     }
 
-    /** True quando a fase de reconexão começou (as ligações começam a crescer). */
+    /**
+     * True assim que a reconexão aparece na tela (opacidade acima de 2%).
+     * Usa a opacidade real, então o som sai junto com a primeira linha visível.
+     */
     boolean estaReconectando() {
-        return t > INICIO_RECONECTAR;
+        return t > INICIO_RECONECTAR && opacidadeLigacao > 0.02;
     }
 
     /** Avança a animação. Retorna true quando terminou. */
@@ -67,6 +71,7 @@ class Giro {
         } else {
             f = 0;
         }
+        opacidadeLigacao = f;
 
         double p = easeInOut( clamp01( ( t - INICIO_GIRO ) / ( FIM_GIRO - INICIO_GIRO ) ) );
 

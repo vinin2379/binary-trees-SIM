@@ -41,6 +41,13 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
     private static final double DUR_ARVORE = 0.8;
     private static final double DUR_PISCA = 1.0;
 
+    /** Posição da caixa de texto na tela (de onde o viajante parte). */
+    private static final double CAMPO_X = 90;
+    private static final double CAMPO_Y = 20;
+    private static final double CAMPO_LARG = 110;
+    private static final double CAMPO_ALT = 36;
+    private static final int TAM_TEXTO_CAMPO = 16;
+
     private enum Fase { NENHUMA, VIAJANDO, PISCANDO, GIRANDO }
 
     protected ArvoreBase arvore;
@@ -132,7 +139,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
 
         setDefaultFontSize( 18 );
 
-        campoValor = new CampoTexto( 90, 20, 110, 36 );
+        campoValor = new CampoTexto( CAMPO_X, CAMPO_Y, CAMPO_LARG, CAMPO_ALT );
         btnInserir = new BotaoEstilizado( 225, 20, 110, 36, "Inserir",
                 Tema.TRIGGER, Tema.TRIGGER_HOVER, Tema.TEXTO_CLARO );
         btnLimpar = new BotaoEstilizado( 350, 20, 110, 36, "Limpar",
@@ -343,9 +350,6 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         if ( modo.ativo() && noSobMouse != null && fase == Fase.NENHUMA ) {
             desenharBalanco( noSobMouse );
         }
-        for ( Viajante v : viajantes ) {
-            v.desenhar( this );
-        }
         endMode2D();
 
         String leg = arvore.legenda();
@@ -367,7 +371,21 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
             modo.desenhar( this );
         } );
 
+        // viajantes em coordenadas de tela, por cima da barra
+        for ( Viajante v : viajantes ) {
+            v.desenhar( this, mundoParaTela( v.getPos() ) );
+        }
+
         desenharExtras();
+    }
+
+    /** Converte uma posição do mundo para a tela, com a câmera atual. */
+    private Vector2 mundoParaTela( Vector2 w ) {
+        Camera2D cam = controlador.camera();
+        return new Vector2(
+                ( w.x - cam.target.x ) * cam.zoom + cam.offset.x,
+                ( w.y - cam.target.y ) * cam.zoom + cam.offset.y
+        );
     }
 
     /** Hover didático: subárvore direita em verde, esquerda em vermelho, e a conta acima do nó. */
@@ -466,7 +484,10 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         arvore.liberarGiros();
     }
 
-    /** Fase de viagem: BST pura, o nó vai até a posição e cresce. */
+    /**
+     * Fase de viagem: BST pura. O círculo nasce no lugar onde o número estava
+     * na caixa de texto e segue até o nó.
+     */
     private void iniciarInsercaoDidatica( int valor ) {
         List<No> caminho = arvore.caminhoAte( valor );
         No novo = arvore.inserirSemBalancear( valor );
@@ -479,7 +500,14 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         novo.ligacaoBloqueada = true;
         novoEmCurso = novo;
         fase = Fase.VIAJANDO;
-        viajantes.add( new Viajante( valor, caminho, novo ) );
+
+        // centro do número dentro da caixa, convertido para o mundo
+        double larg = measureText( String.valueOf( valor ), TAM_TEXTO_CAMPO );
+        Vector2 inicioTela = new Vector2(
+                CAMPO_X + 10 + larg / 2.0,
+                CAMPO_Y + CAMPO_ALT / 2.0 );
+        Vector2 inicio = controlador.telaParaMundo( inicioTela );
+        viajantes.add( new Viajante( valor, caminho, novo, inicio ) );
     }
 
     private void removerChave( int c ) {

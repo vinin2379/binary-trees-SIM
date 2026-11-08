@@ -61,8 +61,8 @@ public final class Sons {
         ligacao = carregar( e, "link.wav" );
         elementos = carregar( e, "dragon-studio-heavy-whoosh-06-414584.mp3" );
         guardar = carregar( e, "800300__mahdinegari__woosh2.mp3" );
-        guardarDown = carregar( e, "800300__mahdinegari__woosh3.mp3" );
-        downer = carregar( e, "makoto-ae-swoosh-4-3598282.mp3" );
+        guardarDown = carregar( e, "800300__mahdinegari__woosh32.wav" );
+        downer = carregar( e, "makoto-ae-swoosh-4-359828.wav" );
         darkspace = carregar( e, "98615__fons__darkspace.wav" );
         sliderEntra = carregar( e, "248210__jomellejager__low-short-sound.wav" );
         unlink = carregar( e, "unlink.mp3" );

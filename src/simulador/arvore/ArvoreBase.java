@@ -290,12 +290,12 @@ public abstract class ArvoreBase {
             }
         }
 
-        // ligações novas (inserção sem rotação) tocam quando crescem
+        // inserção sem rotação: o som toca no primeiro frame em que a ligação aparece
         for ( No no : nosDesenho ) {
             double antes = no.progressoLinha;
             no.animar( delta, velocidade );
-            if ( !girando && antes < 1 && no.progressoLinha >= 1 && no.pai != null
-                    && !no.ligacaoBloqueada && giroAtual == null ) {
+            if ( !girando && giroAtual == null && antes <= 0 && no.progressoLinha > 0
+                    && no.pai != null && !no.ligacaoBloqueada ) {
                 Sons.ligacao();
             }
         }

@@ -6,6 +6,8 @@ import java.awt.Color;
 
 /**
  * Campo de texto numérico desenhado com primitivas da JSGE.
+ * Ao digitar um número com o campo sem foco, ele ganha o foco sozinho.
+ * O Enter é aceito tanto como tecla quanto como caractere (10 ou 13).
  */
 public class CampoTexto {
 
@@ -51,25 +53,40 @@ public class CampoTexto {
             focado = hover;
         }
 
-        if ( e.isKeyPressed( EngineFrame.KEY_ENTER ) && focado ) {
-            enterPressionado = true;
-        }
-
-        if ( !focado ) {
-            return;
-        }
-
         int c;
         while ( ( c = e.getCharPressed() ) != 0 ) {
+            // Enter chega como caractere em algumas versões da engine
+            if ( c == 10 || c == 13 ) {
+                if ( focado ) {
+                    enterPressionado = true;
+                }
+                continue;
+            }
+            boolean digito = c >= '0' && c <= '9';
+            if ( digito ) {
+                focado = true;
+            }
+            if ( !focado ) {
+                continue;
+            }
             if ( c == 8 ) {
                 apagarUltimo();
                 continue;
             }
-            boolean digito = c >= '0' && c <= '9';
             boolean sinal = c == '-' && valor.length() == 0;
             if ( ( digito || sinal ) && valor.length() < MAX_CARACTERES ) {
                 valor.append( (char) c );
             }
+        }
+
+        if ( !focado ) {
+            backspaceAntes = false;
+            tempoBackspace = 0;
+            return;
+        }
+
+        if ( e.isKeyPressed( EngineFrame.KEY_ENTER ) ) {
+            enterPressionado = true;
         }
 
         boolean backspace = e.isKeyPressed( EngineFrame.KEY_BACKSPACE );

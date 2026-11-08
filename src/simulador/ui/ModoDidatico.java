@@ -154,16 +154,16 @@ public class ModoDidatico {
             }
             e.drawText( "Ativar modo didático", x + 42, cy + 8 - 14 / 3.0, 14, Tema.TEXTO );
 
-            e.drawText( String.format( "Velocidade: %.1fx", velocidade ), x + 18, y + 78, 14, Tema.TEXTO );
-            e.fillRectangle( x + TRILHA_X, y + 102, TRILHA_LARG, 4, Tema.BORDA );
+            e.drawText( String.format( "Velocidade: %.1fx", velocidade ), x + 18, y + 83, 14, Tema.TEXTO );
+            e.fillRectangle( x + TRILHA_X, y + 107, TRILHA_LARG, 4, Tema.BORDA );
             double f = ( velocidade - VEL_MIN ) / ( VEL_MAX - VEL_MIN );
-            e.fillCircle( new Vector2( x + TRILHA_X + f * TRILHA_LARG, y + 104 ), 7, Tema.TRIGGER );
+            e.fillCircle( new Vector2( x + TRILHA_X + f * TRILHA_LARG, y + 109 ), 7, Tema.TRIGGER );
         }
 
         if ( extraSuportada && progresso > 0.85 ) {
             double a = Math.min( 1, ( progresso - 0.85 ) / 0.15 );
             double ex = x + 18;
-            double ey = y + 140;
+            double ey = y + 132;
             BotaoEstilizado.retanguloArredondado( e, ex - 1, ey - 1, 18, 18, 5,
                     ColorUtils.fade( Tema.BORDA, a ) );
             BotaoEstilizado.retanguloArredondado( e, ex, ey, 16, 16, 4,
