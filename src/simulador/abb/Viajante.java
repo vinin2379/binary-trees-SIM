@@ -5,10 +5,13 @@ import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import simulador.ui.Sons;
 import simulador.ui.Tema;
 
 /**
  * Círculo com o valor da chave que percorre a árvore no modo didático.
+ * Toca nodeJump ao passar de um nó para o próximo, nodeHigher/nodeLower na
+ * comparação, e noAparece quando chega ao destino.
  */
 public class Viajante {
 
@@ -20,6 +23,7 @@ public class Viajante {
     private final Vector2 pos;
     private int indice;
     private double tempo;
+    private boolean chegouTocou;
 
     public Viajante( int valor, List<No> caminho, No destino ) {
         this.valor = valor;
@@ -46,6 +50,20 @@ public class Viajante {
         pos.y += ( destinoPos.y - pos.y ) * k;
 
         if ( Math.hypot( destinoPos.x - pos.x, destinoPos.y - pos.y ) < 2 ) {
+            if ( atual == destino ) {
+                if ( !chegouTocou ) {
+                    chegouTocou = true;
+                    Sons.noAparece();
+                }
+            } else {
+                // comparação feita ao sair do nó atual
+                if ( valor > atual.c ) {
+                    Sons.nodeHigher();
+                } else {
+                    Sons.nodeLower();
+                }
+                Sons.nodeJump();
+            }
             indice++;
         }
         return indice >= alvos.size();

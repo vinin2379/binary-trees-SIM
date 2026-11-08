@@ -37,6 +37,21 @@ class Giro {
         }
     }
 
+    /** True enquanto a fase de desconexão está no começo (para tocar o unlink uma vez). */
+    boolean estaDesconectando() {
+        return t < FIM_DESCONECTAR;
+    }
+
+    /** True quando a fase de giro (nós se movendo) está em andamento. */
+    boolean estaGirando() {
+        return t >= INICIO_GIRO && t < FIM_GIRO;
+    }
+
+    /** True quando a fase de reconexão começou (as ligações começam a crescer). */
+    boolean estaReconectando() {
+        return t > INICIO_RECONECTAR;
+    }
+
     /** Avança a animação. Retorna true quando terminou. */
     boolean atualizar( double delta, double vel ) {
         if ( !iniciado ) {

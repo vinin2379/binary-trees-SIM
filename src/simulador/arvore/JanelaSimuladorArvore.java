@@ -2,7 +2,9 @@ package simulador.arvore;
 
 import br.com.davidbuzatto.jsge.core.Camera2D;
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
+import br.com.davidbuzatto.jsge.core.utils.ColorUtils;
 import br.com.davidbuzatto.jsge.math.Vector2;
+import java.awt.Color;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.util.ArrayDeque;
@@ -338,6 +340,9 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         beginMode2D( controlador.camera() );
         arvore.desenharFundo( this );
         arvore.desenhar( this, noSobMouse );
+        if ( modo.ativo() && noSobMouse != null && fase == Fase.NENHUMA ) {
+            desenharBalanco( noSobMouse );
+        }
         for ( Viajante v : viajantes ) {
             v.desenhar( this );
         }
@@ -363,6 +368,36 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         } );
 
         desenharExtras();
+    }
+
+    /** Hover didático: subárvore direita em verde, esquerda em vermelho, e a conta acima do nó. */
+    private void desenharBalanco( No no ) {
+        String rotulo = arvore.textoHover( no );
+        if ( rotulo != null ) {
+            int tam = 14;
+            int larg = measureText( rotulo, tam );
+            drawText( rotulo, no.pos.x - larg / 2.0, no.pos.y - no.raio - 14, tam, Tema.TEXTO );
+            return;
+        }
+
+        int esq = arvore.alturaSubarvore( no.esq );
+        int dir = arvore.alturaSubarvore( no.d );
+        pintarSubarvore( no.d, Tema.VERDE );
+        pintarSubarvore( no.esq, Tema.VERMELHO );
+
+        String conta = esq + " - " + dir + " = " + ( esq - dir );
+        int tam = 14;
+        int larg = measureText( conta, tam );
+        drawText( conta, no.pos.x - larg / 2.0, no.pos.y - no.raio - 14, tam, Tema.TEXTO );
+    }
+
+    private void pintarSubarvore( No n, Color cor ) {
+        if ( n == null ) {
+            return;
+        }
+        fillCircle( n.pos, n.raio, ColorUtils.fade( cor, 0.45 ) );
+        pintarSubarvore( n.esq, cor );
+        pintarSubarvore( n.d, cor );
     }
 
     private void comDeslocamento( double dy, Runnable desenho ) {
@@ -444,7 +479,6 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         novo.ligacaoBloqueada = true;
         novoEmCurso = novo;
         fase = Fase.VIAJANDO;
-        Sons.noAparece();
         viajantes.add( new Viajante( valor, caminho, novo ) );
     }
 

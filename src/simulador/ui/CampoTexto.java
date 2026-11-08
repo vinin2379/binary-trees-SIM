@@ -2,6 +2,7 @@ package simulador.ui;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.math.Vector2;
+import java.awt.Color;
 
 /**
  * Campo de texto numérico desenhado com primitivas da JSGE.
@@ -12,6 +13,8 @@ public class CampoTexto {
     private static final int TAM_TEXTO = 16;
     private static final int MAX_CARACTERES = 6;
     private static final double PERIODO_CURSOR = 0.5;
+    private static final double ATRASO_REPETICAO = 0.4;
+    private static final double INTERVALO_REPETICAO = 0.05;
 
     private final double x;
     private final double y;
@@ -20,7 +23,12 @@ public class CampoTexto {
     private final StringBuilder valor = new StringBuilder();
 
     private boolean focado;
+    private boolean hover;
+    private boolean hoverAnt;
     private double tempo;
+    private double tempoBackspace;
+    private boolean backspaceAntes;
+    private boolean enterPressionado;
 
     public CampoTexto( double x, double y, double largura, double altura ) {
         this.x = x;
@@ -29,78 +37,65 @@ public class CampoTexto {
         this.altura = altura;
     }
 
-    private static final double ATRASO_REPETICAO = 0.4;
-private static final double INTERVALO_REPETICAO = 0.05;
+    public void atualizar( EngineFrame e, double delta ) {
+        tempo += delta;
 
-private double tempoBackspace;
-private boolean backspaceAntes;
-private boolean enterPressionado;
-
-public void atualizar( EngineFrame e, double delta ) {
-    tempo += delta;
-
-    Vector2 m = e.getMousePositionPoint();
-    boolean dentro = m != null && m.x >= x && m.x <= x + largura && m.y >= y && m.y <= y + altura;
-    if ( e.isMouseButtonPressed( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
-        focado = dentro;
-    }
-
-    if ( !focado ) {
-        return;
-    }
-    
-    if ( e.isKeyPressed( EngineFrame.KEY_ENTER ) ) {
-        enterPressionado = true;
-    }
-
-    int c;
-    while ( ( c = e.getCharPressed() ) != 0 ) {
-        if ( c == 8 ) { // backspace chega como caractere
-            apagarUltimo();
-            continue;
+        Vector2 m = e.getMousePositionPoint();
+        hover = m != null && m.x >= x && m.x <= x + largura && m.y >= y && m.y <= y + altura;
+        if ( hover && !hoverAnt ) {
+            Sons.hover();
         }
-        boolean digito = c >= '0' && c <= '9';
-        boolean sinal = c == '-' && valor.length() == 0;
-        if ( ( digito || sinal ) && valor.length() < MAX_CARACTERES ) {
-            valor.append( (char) c );
-        }
-    }
+        hoverAnt = hover;
 
-    // backspace como tecla: dispara ao pressionar e repete enquanto segura
-    boolean backspace = e.isKeyPressed( EngineFrame.KEY_BACKSPACE );
-    if ( backspace ) {
-        if ( !backspaceAntes ) {
-            apagarUltimo();
-            tempoBackspace = 0;
-        } else {
-            tempoBackspace += delta;
-            if ( tempoBackspace >= ATRASO_REPETICAO ) {
+        if ( e.isMouseButtonPressed( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
+            focado = hover;
+        }
+
+        if ( e.isKeyPressed( EngineFrame.KEY_ENTER ) && focado ) {
+            enterPressionado = true;
+        }
+
+        if ( !focado ) {
+            return;
+        }
+
+        int c;
+        while ( ( c = e.getCharPressed() ) != 0 ) {
+            if ( c == 8 ) {
                 apagarUltimo();
-                tempoBackspace -= INTERVALO_REPETICAO;
+                continue;
+            }
+            boolean digito = c >= '0' && c <= '9';
+            boolean sinal = c == '-' && valor.length() == 0;
+            if ( ( digito || sinal ) && valor.length() < MAX_CARACTERES ) {
+                valor.append( (char) c );
             }
         }
-    } else {
-        tempoBackspace = 0;
-    }
-    backspaceAntes = backspace;
-}
 
-    private void apagarUltimo() {
-        if ( valor.length() > 0 ) {
-            valor.deleteCharAt( valor.length() - 1 );
+        boolean backspace = e.isKeyPressed( EngineFrame.KEY_BACKSPACE );
+        if ( backspace ) {
+            if ( !backspaceAntes ) {
+                apagarUltimo();
+                tempoBackspace = 0;
+            } else {
+                tempoBackspace += delta;
+                if ( tempoBackspace >= ATRASO_REPETICAO ) {
+                    apagarUltimo();
+                    tempoBackspace -= INTERVALO_REPETICAO;
+                }
+            }
+        } else {
+            tempoBackspace = 0;
         }
+        backspaceAntes = backspace;
     }
 
     public void desenhar( EngineFrame e ) {
-        BotaoEstilizado.retanguloArredondado( e, x, y, largura, altura, RAIO_CANTO, Tema.BORDA );
+        Color borda = focado ? Tema.TRIGGER : ( hover ? Tema.LINHA : Tema.BORDA );
+
+        BotaoEstilizado.retanguloArredondado( e, x, y, largura, altura, RAIO_CANTO, borda );
         BotaoEstilizado.retanguloArredondado( e, x + 1, y + 1, largura - 2, altura - 2, RAIO_CANTO - 1,
                 Tema.PAINEL );
-
-        if ( focado ) {
-            BotaoEstilizado.retanguloArredondado( e, x, y, largura, altura, RAIO_CANTO, Tema.TRIGGER );
-            BotaoEstilizado.retanguloArredondado( e, x + 2, y + 2, largura - 4, altura - 4, RAIO_CANTO - 2,
-                    Tema.PAINEL );
-        }
 
         String texto = valor.toString();
         int larg = e.measureText( texto, TAM_TEXTO );
@@ -113,6 +108,12 @@ public void atualizar( EngineFrame e, double delta ) {
         }
     }
 
+    public boolean enterFoiPressionado() {
+        boolean r = enterPressionado;
+        enterPressionado = false;
+        return r;
+    }
+
     public String getValor() {
         return valor.toString();
     }
@@ -120,10 +121,10 @@ public void atualizar( EngineFrame e, double delta ) {
     public void limpar() {
         valor.setLength( 0 );
     }
-    
-    public boolean enterFoiPressionado() {
-        boolean r = enterPressionado;
-        enterPressionado = false;
-        return r;
+
+    private void apagarUltimo() {
+        if ( valor.length() > 0 ) {
+            valor.deleteCharAt( valor.length() - 1 );
+        }
     }
 }

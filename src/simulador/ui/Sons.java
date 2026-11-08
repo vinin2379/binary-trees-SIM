@@ -30,6 +30,12 @@ public final class Sons {
     private static Sound guardar;
     private static Sound downer;
     private static Sound darkspace;
+    private static Sound sliderEntra;
+    private static Sound unlink;
+    private static Sound nodeJump;
+    private static Sound nodeHigher;
+    private static Sound nodeLower;
+    private static Sound nodeMove;
     private static Sound[] pops;
     private static int proximoPop;
 
@@ -41,7 +47,7 @@ public final class Sons {
             return;
         }
         engine = e;
-        hover = carregar( e, "862449__avaol__button-hover-2.wav" );
+        hover = carregar( e, "hover.wav" );
         clique = carregar( e, "creatorshome-digital-click-357350.mp3" );
         beep = carregar( e, "7624__ls__beep-003.wav" );
         low = carregar( e, "248210__jomellejager__low-short-sound.wav" );
@@ -52,12 +58,18 @@ public final class Sons {
         menuFim = carregar( e, "soundreality-whoosh-end-384629.mp3" );
         coisas = carregar( e, "soundreality-whoosh-large-sub-3846312.mp3" );
         noAparece = carregar( e, "dragon-studio-pop-402322.mp3" );
-        ligacao = carregar( e, "u_xio2tir4to-bubble-pop-389501.mp3" );
+        ligacao = carregar( e, "link.wav" );
         elementos = carregar( e, "dragon-studio-heavy-whoosh-06-414584.mp3" );
         guardar = carregar( e, "800300__mahdinegari__woosh2.mp3" );
         guardarDown = carregar( e, "800300__mahdinegari__woosh3.mp3" );
         downer = carregar( e, "makoto-ae-swoosh-4-3598282.mp3" );
         darkspace = carregar( e, "98615__fons__darkspace.wav" );
+        sliderEntra = carregar( e, "248210__jomellejager__low-short-sound.wav" );
+        unlink = carregar( e, "unlink.mp3" );
+        nodeJump = carregar( e, "nodeJump.mp3" );
+        nodeHigher = carregar( e, "nodeHigher.mp3" );
+        nodeLower = carregar( e, "nodeLower.mp3" );
+        nodeMove = carregar( e, "nodeMove.mp3" );
         pops = new Sound[] {
             carregar( e, "850087__lbrady240__pop01.wav" ),
             carregar( e, "850088__lbrady240__pop02.wav" ),
@@ -125,12 +137,12 @@ public final class Sons {
         tocar( darkspace );
     }
 
-    /** Nó novo aparecendo na árvore. */
+    /** Nó novo chegando ao lugar na árvore. */
     public static void noAparece() {
         tocar( noAparece );
     }
 
-    /** Ligação sendo desenhada entre pai e filho. */
+    /** Ligações religadas ao fim de uma rotação ou inserção. */
     public static void ligacao() {
         tocar( ligacao );
     }
@@ -149,9 +161,39 @@ public final class Sons {
     public static void downer() {
         tocar( downer );
     }
-    
-    public static void guardarDowner(){
+
+    public static void guardarDowner() {
         tocar( guardarDown );
+    }
+
+    /** Slider H entrando no painel da AVL. */
+    public static void sliderEntra() {
+        tocar( sliderEntra );
+    }
+
+    /** Ligações sendo desconectadas (rotação ou remoção). */
+    public static void unlink() {
+        tocar( unlink );
+    }
+
+    /** Viajante pulando de um nó para o próximo no percurso. */
+    public static void nodeJump() {
+        tocar( nodeJump );
+    }
+
+    /** Comparação: chave maior que o nó, vai para a direita (verde). */
+    public static void nodeHigher() {
+        tocar( nodeHigher );
+    }
+
+    /** Comparação: chave menor que o nó, vai para a esquerda (vermelho). */
+    public static void nodeLower() {
+        tocar( nodeLower );
+    }
+
+    /** Nós girando e se movendo durante a rotação. */
+    public static void nodeMove() {
+        tocar( nodeMove );
     }
 
     private static void tocar( Sound som ) {

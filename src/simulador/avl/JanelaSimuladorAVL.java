@@ -5,12 +5,15 @@ import br.com.davidbuzatto.jsge.math.Vector2;
 import simulador.arvore.ArvoreBase;
 import simulador.arvore.JanelaSimuladorArvore;
 import simulador.ui.BotaoEstilizado;
+import simulador.ui.Sons;
 import simulador.ui.Tema;
+import java.awt.Color;
+
 
 /**
  * Simulador de AVL. O slider do limite H fica no canto inferior esquerdo:
- * sobe com fade depois que a janela entra, desliza suavemente e trava no
- * inteiro mais próximo ao soltar.
+ * sobe com fade depois que a janela entra, tem hover e clique com som, e
+ * trava no inteiro mais próximo ao soltar.
  */
 public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
 
@@ -32,6 +35,9 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
     /** Posição desenhada do slider, perseguindo alvoF. */
     private double posF = 0;
     private boolean arrastando;
+    private boolean hoverSlider;
+    private boolean hoverSliderAnt;
+    private boolean sliderTocou;
     private double tEntrada;
 
     public JanelaSimuladorAVL() {
@@ -46,13 +52,24 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
     @Override
     protected void atualizarExtras( double delta ) {
         tEntrada += delta;
+        if ( !sliderTocou && progressoEntrada() > 0 ) {
+            sliderTocou = true;
+            Sons.sliderEntra();
+        }
 
         Vector2 m = getMousePositionPoint();
+
+        hoverSlider = m != null && sobExtras( m );
+        if ( hoverSlider && !hoverSliderAnt ) {
+            Sons.hover();
+        }
+        hoverSliderAnt = hoverSlider;
 
         if ( !isMouseButtonDown( MOUSE_BUTTON_LEFT ) ) {
             arrastando = false;
         }
         if ( m != null && isMouseButtonPressed( MOUSE_BUTTON_LEFT ) && sobExtras( m ) ) {
+            Sons.clique();
             arrastando = true;
         }
         if ( arrastando && m != null ) {
@@ -109,10 +126,12 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
             fillCircle( new Vector2( mx, ty + 2 ), 2, ColorUtils.fade( Tema.BORDA, e ) );
         }
 
-        fillRectangle( TRILHA_X, ty, TRILHA_LARG, 4, ColorUtils.fade( Tema.BORDA, e ) );
+        Color trilha = ( hoverSlider || arrastando ) ? Tema.LINHA : Tema.BORDA;
+        fillRectangle( TRILHA_X, ty, TRILHA_LARG, 4, ColorUtils.fade( trilha, e ) );
 
-        double raio = arrastando ? 9 : 7;
+        double raio = arrastando ? 9 : ( hoverSlider ? 8.5 : 7 );
+        Color bolinha = ( hoverSlider || arrastando ) ? Tema.TRIGGER_HOVER : Tema.TRIGGER;
         fillCircle( new Vector2( TRILHA_X + posF * TRILHA_LARG, ty + 2 ), raio,
-                ColorUtils.fade( Tema.TRIGGER, e ) );
+                ColorUtils.fade( bolinha, e ) );
     }
 }

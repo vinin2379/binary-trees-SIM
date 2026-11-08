@@ -10,8 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import simulador.ui.Tema;
 import simulador.ui.Sons;
+import simulador.ui.Tema;
 
 /**
  * Parte comum das árvores. Uma operação inteira (inserção ou remoção com
@@ -30,6 +30,10 @@ public abstract class ArvoreBase {
     protected final Set<No> envolvidos = new HashSet<>();
     private Giro giroAtual;
     private boolean girosLiberados;
+    private boolean unlinkTocou;
+    private boolean moveTocou;
+    private boolean ligacaoTocou;
+    private final Set<No> removidosTocados = new HashSet<>();
 
     private double ultEspHor, ultEspVert;
     private int ultMargemHor, ultMargemVert;
@@ -175,6 +179,10 @@ public abstract class ArvoreBase {
         envolvidos.clear();
         giroAtual = null;
         girosLiberados = false;
+        unlinkTocou = false;
+        moveTocou = false;
+        ligacaoTocou = false;
+        removidosTocados.clear();
     }
 
     protected No buscar( int c ) {
@@ -217,6 +225,9 @@ public abstract class ArvoreBase {
         }
         if ( !grupo.isEmpty() ) {
             giroAtual = new Giro( grupo );
+            unlinkTocou = false;
+            moveTocou = false;
+            ligacaoTocou = false;
         }
         envolvidos.clear();
     }
@@ -259,24 +270,45 @@ public abstract class ArvoreBase {
     }
 
     public void animar( double delta, double velocidade ) {
-        if ( girosLiberados && giroAtual != null ) {
+        boolean girando = girosLiberados && giroAtual != null;
+        if ( girando ) {
+            if ( !unlinkTocou && giroAtual.estaDesconectando() ) {
+                unlinkTocou = true;
+                Sons.unlink();
+            }
+            if ( !moveTocou && giroAtual.estaGirando() ) {
+                moveTocou = true;
+                Sons.nodeMove();
+            }
+            if ( !ligacaoTocou && giroAtual.estaReconectando() ) {
+                ligacaoTocou = true;
+                Sons.ligacao();
+            }
             if ( giroAtual.atualizar( delta, velocidade ) ) {
                 giroAtual = null;
                 girosLiberados = false;
             }
         }
 
+        // ligações novas (inserção sem rotação) tocam quando crescem
         for ( No no : nosDesenho ) {
             double antes = no.progressoLinha;
             no.animar( delta, velocidade );
-            if ( antes <= 0 && no.progressoLinha > 0 && no.pai != null ) {
+            if ( !girando && antes < 1 && no.progressoLinha >= 1 && no.pai != null
+                    && !no.ligacaoBloqueada && giroAtual == null ) {
                 Sons.ligacao();
             }
         }
 
+        // unlink toca quando o nó começa a sair (uma vez por nó)
+        boolean tocouUnlinkNesteFrame = false;
         Iterator<No> it = fantasmas.iterator();
         while ( it.hasNext() ) {
             No g = it.next();
+            if ( g.removendo && removidosTocados.add( g ) && !tocouUnlinkNesteFrame ) {
+                tocouUnlinkNesteFrame = true;
+                Sons.unlink();
+            }
             g.animar( delta, velocidade );
             if ( g.escala <= 0 && g.progressoLinha <= 0 && g.paiAntigo == null ) {
                 it.remove();
