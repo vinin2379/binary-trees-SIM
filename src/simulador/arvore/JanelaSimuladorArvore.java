@@ -29,16 +29,12 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
 
     private static final double ALTURA_TOOLBAR = 75;
 
+    private static final double ATRASO_INICIO = 0.3;
     private static final double DUR_TOTAL = 1.05;
     private static final double DUR_ITEM = 0.6;
+    private static final double DUR_SAIDA = 0.7;
     private static final double DESLOC_TOOLBAR = 90;
     private static final double DESLOC_ARVORE = 500;
-    private static final double INICIO_PAINEL = 0.0;
-    private static final double INICIO_CAMPO = 0.1;
-    private static final double INICIO_INSERIR = 0.18;
-    private static final double INICIO_LIMPAR = 0.26;
-    private static final double INICIO_VOLTAR = 0.34;
-    private static final double INICIO_MODO = 0.42;
     private static final double INICIO_ARVORE = 0.2;
     private static final double DUR_ARVORE = 0.8;
     private static final double DUR_PISCA = 1.0;
@@ -70,9 +66,12 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
     private double tempoPisca;
     private boolean verificacaoPendente;
 
+    private double tempoPronto;
+    private boolean pronto;
     private double tempoAnim;
     private boolean entrando;
     private boolean saindo;
+    private double tSaida;
     private boolean telaCheia;
 
     protected JanelaSimuladorArvore( String titulo ) {
@@ -141,12 +140,27 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         modo = new ModoDidatico( 490, 20 );
 
         tempoAnim = 0;
+        tSaida = 0;
         entrando = true;
         saindo = false;
+        pronto = false;
+        tempoPronto = 0;
     }
 
     @Override
-    public void update( double delta ) {
+    public void update( double deltaBruto ) {
+        double delta = Math.min( deltaBruto, 1.0 / 30 );
+
+        // espera a janela estabilizar antes de qualquer animação ou som
+        if ( !pronto ) {
+            tempoPronto += delta;
+            if ( tempoPronto < ATRASO_INICIO ) {
+                return;
+            }
+            pronto = true;
+            Sons.elementosSimulador();
+        }
+
         if ( isKeyPressed( KEY_F11 ) ) {
             alternarTelaCheia();
         }
@@ -159,16 +173,19 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
             if ( tempoAnim >= DUR_TOTAL ) {
                 entrando = false;
             }
-        } else if ( saindo ) {
-            tempoAnim = Math.max( 0, tempoAnim - delta );
-            if ( tempoAnim <= 0 ) {
+        }
+        if ( saindo ) {
+            tSaida = Math.min( DUR_SAIDA, tSaida + delta );
+            if ( tSaida >= DUR_SAIDA ) {
                 voltarAoMenu();
                 saindo = false;
                 return;
             }
         }
 
-        controlador.camera().offset.y = desl( INICIO_ARVORE, DUR_ARVORE, DESLOC_ARVORE );
+        controlador.camera().offset.y = saindo
+                ? easeIn( tSaida / DUR_SAIDA ) * DESLOC_ARVORE
+                : desl( INICIO_ARVORE, DUR_ARVORE, DESLOC_ARVORE );
 
         double vel = modo.velocidadeAnimacao();
         arvore.animar( delta, vel );
@@ -202,7 +219,9 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
             limparTudo();
         }
         if ( btnVoltar.atualizar( this ) ) {
+            Sons.guardarElementos();
             saindo = true;
+            tSaida = 0;
             return;
         }
 
@@ -312,6 +331,10 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
     public void draw() {
         clearBackground( Tema.FUNDO );
 
+        if ( !pronto ) {
+            return;
+        }
+
         beginMode2D( controlador.camera() );
         arvore.desenharFundo( this );
         arvore.desenhar( this, noSobMouse );
@@ -325,16 +348,19 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
             drawText( leg, 10, 575, 14, Tema.TEXTO );
         }
 
-        comDeslocamento( -desl( INICIO_PAINEL, DUR_ITEM, DESLOC_TOOLBAR ), () -> {
+        double dyToolbar = saindo
+                ? -easeIn( tSaida / DUR_SAIDA ) * DESLOC_TOOLBAR
+                : -desl( 0, DUR_ITEM, DESLOC_TOOLBAR );
+        comDeslocamento( dyToolbar, () -> {
             fillRectangle( 10, 10, 880, 55, Tema.PAINEL );
             drawRectangle( 10, 10, 880, 55, Tema.BORDA );
             drawText( "Chave:", 20, 31, 18, Tema.TEXTO );
+            campoValor.desenhar( this );
+            btnInserir.desenhar( this );
+            btnLimpar.desenhar( this );
+            btnVoltar.desenhar( this );
+            modo.desenhar( this );
         } );
-        comDeslocamento( -desl( INICIO_CAMPO, DUR_ITEM, DESLOC_TOOLBAR ), () -> campoValor.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_INSERIR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnInserir.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_LIMPAR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnLimpar.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_VOLTAR, DUR_ITEM, DESLOC_TOOLBAR ), () -> btnVoltar.desenhar( this ) );
-        comDeslocamento( -desl( INICIO_MODO, DUR_ITEM, DESLOC_TOOLBAR ), () -> modo.desenhar( this ) );
 
         desenharExtras();
     }
@@ -350,6 +376,11 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         double q = Math.max( 0, Math.min( 1, ( tempoAnim - inicio ) / dur ) );
         double e = 1 - Math.pow( 1 - q, 3 );
         return ( 1 - e ) * dist;
+    }
+
+    private static double easeIn( double t ) {
+        t = Math.max( 0, Math.min( 1, t ) );
+        return t * t * t;
     }
 
     private void alternarTelaCheia() {
@@ -396,6 +427,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         }
         arvore.atualizarNos( espHor, espVert, margemHor, margemVert );
         novo.pos = new Vector2( novo.alvo.x, novo.alvo.y );
+        Sons.noAparece();
         arvore.liberarGiros();
     }
 
@@ -412,6 +444,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         novo.ligacaoBloqueada = true;
         novoEmCurso = novo;
         fase = Fase.VIAJANDO;
+        Sons.noAparece();
         viajantes.add( new Viajante( valor, caminho, novo ) );
     }
 

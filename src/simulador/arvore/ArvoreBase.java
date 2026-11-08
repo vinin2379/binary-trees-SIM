@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import simulador.ui.Tema;
+import simulador.ui.Sons;
 
 /**
  * Parte comum das árvores. Uma operação inteira (inserção ou remoção com
@@ -266,8 +267,13 @@ public abstract class ArvoreBase {
         }
 
         for ( No no : nosDesenho ) {
+            double antes = no.progressoLinha;
             no.animar( delta, velocidade );
+            if ( antes <= 0 && no.progressoLinha > 0 && no.pai != null ) {
+                Sons.ligacao();
+            }
         }
+
         Iterator<No> it = fantasmas.iterator();
         while ( it.hasNext() ) {
             No g = it.next();

@@ -26,6 +26,8 @@ public class ModoDidatico {
     private boolean aberto;
     private boolean ativo;
     private boolean arrastandoVel;
+    private boolean hoverCab;
+    private boolean hoverCabAnt;
     private double progresso;
     private double velocidade = 1.0;
 
@@ -79,6 +81,12 @@ public class ModoDidatico {
         }
 
         Vector2 m = e.getMousePositionPoint();
+        hoverCab = m != null && dentro( m, x, y, largura(), ALT_CABECALHO );
+        if ( hoverCab && !hoverCabAnt ) {
+            Sons.hover();
+        }
+        hoverCabAnt = hoverCab;
+
         if ( m == null ) {
             return;
         }
@@ -86,8 +94,8 @@ public class ModoDidatico {
         boolean controlesAtivos = aberto && progresso > 0.8;
 
         if ( e.isMouseButtonPressed( EngineFrame.MOUSE_BUTTON_LEFT ) ) {
-            if ( dentro( m, x, y, largura(), ALT_CABECALHO ) ) {
-                Sons.clique();
+            if ( hoverCab && !aberto ) {
+                Sons.downer();
                 aberto = !aberto;
             } else if ( controlesAtivos && dentro( m, x + 12, y + 46, 230, 24 ) ) {
                 Sons.clique();
@@ -99,7 +107,8 @@ public class ModoDidatico {
             } else if ( controlesAtivos && extraSuportada && dentro( m, x + 12, y + 132, 230, 24 ) ) {
                 Sons.clique();
                 extraAtiva = !extraAtiva;
-            } else if ( aberto && !contem( m ) ) {
+            } else if ( (aberto && !contem( m )) || aberto && contem( m )  ) {
+                Sons.guardarDowner();
                 aberto = false;
             }
         }
@@ -124,6 +133,9 @@ public class ModoDidatico {
         BotaoEstilizado.retanguloArredondado( e, x, y, w, h, 8, Tema.PAINEL );
 
         Color fundoCab = Tema.mistura( Tema.TRIGGER, Tema.PAINEL, progresso );
+        if ( hoverCab ) {
+            fundoCab = Tema.mistura( fundoCab, Tema.TRIGGER_HOVER, 0.35 );
+        }
         Color txtCab = Tema.mistura( Tema.TEXTO_CLARO, Tema.TEXTO, progresso );
         BotaoEstilizado.retanguloArredondado( e, x, y, w, ALT_CABECALHO, 8, fundoCab );
         e.drawText( "Modo Didático", x + 14, y + ALT_CABECALHO / 2.0 - 16 / 3.0, 16, txtCab );

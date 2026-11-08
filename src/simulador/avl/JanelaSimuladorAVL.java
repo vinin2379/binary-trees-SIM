@@ -1,5 +1,6 @@
 package simulador.avl;
 
+import br.com.davidbuzatto.jsge.core.utils.ColorUtils;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import simulador.arvore.ArvoreBase;
 import simulador.arvore.JanelaSimuladorArvore;
@@ -7,9 +8,9 @@ import simulador.ui.BotaoEstilizado;
 import simulador.ui.Tema;
 
 /**
- * Simulador de AVL. O slider do limite N fica no canto inferior esquerdo:
- * desliza suavemente e trava no inteiro mais próximo ao soltar. Ao mudar N,
- * a árvore é verificada e rebalanceada se necessário.
+ * Simulador de AVL. O slider do limite H fica no canto inferior esquerdo:
+ * sobe com fade depois que a janela entra, desliza suavemente e trava no
+ * inteiro mais próximo ao soltar.
  */
 public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
 
@@ -21,14 +22,17 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
     private static final double TRILHA_LARG = 220;
     private static final double TRILHA_Y = 578;
     private static final double VELOC_SUAVIZAR = 14;
+    private static final double DUR_ENTRADA = 0.5;
+    private static final double DESLOC_ENTRADA = 50;
 
-    /** Limite N atual (1 a 3). */
+    /** Limite H atual (1 a 3). */
     private int limite = 1;
-    /** Posição-alvo do slider, de 0 a 1. Enquanto arrasta, segue o mouse; ao soltar, trava. */
+    /** Posição-alvo do slider, de 0 a 1. */
     private double alvoF = 0;
     /** Posição desenhada do slider, perseguindo alvoF. */
     private double posF = 0;
     private boolean arrastando;
+    private double tEntrada;
 
     public JanelaSimuladorAVL() {
         super( "Simulador: Árvore AVL" );
@@ -41,6 +45,8 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
 
     @Override
     protected void atualizarExtras( double delta ) {
+        tEntrada += delta;
+
         Vector2 m = getMousePositionPoint();
 
         if ( !isMouseButtonDown( MOUSE_BUTTON_LEFT ) ) {
@@ -60,16 +66,20 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
             solicitarRebalanceamento();
         }
 
-        // ao soltar, o alvo trava no valor inteiro do limite atual
         if ( !arrastando ) {
             alvoF = ( limite - 1 ) / 2.0;
         }
 
-        // o círculo persegue o alvo com suavização exponencial (independe do FPS)
         posF += ( alvoF - posF ) * ( 1 - Math.exp( -VELOC_SUAVIZAR * delta ) );
         if ( Math.abs( posF - alvoF ) < 0.001 ) {
             posF = alvoF;
         }
+    }
+
+    /** Progresso da entrada do slider (0 a 1). */
+    private double progressoEntrada() {
+        double p = Math.min( 1, tEntrada / DUR_ENTRADA );
+        return 1 - Math.pow( 1 - p, 3 );
     }
 
     @Override
@@ -79,21 +89,30 @@ public class JanelaSimuladorAVL extends JanelaSimuladorArvore {
 
     @Override
     protected void desenharExtras() {
-        BotaoEstilizado.retanguloArredondado( this, X - 1, Y - 1, LARG + 2, ALT + 2, 9, Tema.BORDA );
-        BotaoEstilizado.retanguloArredondado( this, X, Y, LARG, ALT, 8, Tema.PAINEL );
+        double e = progressoEntrada();
+        if ( e <= 0 ) {
+            return;
+        }
+        double dy = ( 1 - e ) * DESLOC_ENTRADA;
+        double y = Y + dy;
+        double ty = TRILHA_Y + dy;
 
-        drawText( "Limite H: " + limite, X + 10, Y + 6, 14, Tema.TEXTO );
+        BotaoEstilizado.retanguloArredondado( this, X - 1, y - 1, LARG + 2, ALT + 2, 9,
+                ColorUtils.fade( Tema.BORDA, e ) );
+        BotaoEstilizado.retanguloArredondado( this, X, y, LARG, ALT, 8,
+                ColorUtils.fade( Tema.PAINEL, e ) );
 
-        // marcas nos três valores possíveis
+        drawText( "Limite H: " + limite, X + 10, y + 6, 14, ColorUtils.fade( Tema.TEXTO, e ) );
+
         for ( int i = 0; i < 3; i++ ) {
             double mx = TRILHA_X + ( i / 2.0 ) * TRILHA_LARG;
-            fillCircle( new Vector2( mx, TRILHA_Y + 2 ), 2, Tema.BORDA );
+            fillCircle( new Vector2( mx, ty + 2 ), 2, ColorUtils.fade( Tema.BORDA, e ) );
         }
 
-        fillRectangle( TRILHA_X, TRILHA_Y, TRILHA_LARG, 4, Tema.BORDA );
+        fillRectangle( TRILHA_X, ty, TRILHA_LARG, 4, ColorUtils.fade( Tema.BORDA, e ) );
 
-        // o círculo cresce enquanto é arrastado
         double raio = arrastando ? 9 : 7;
-        fillCircle( new Vector2( TRILHA_X + posF * TRILHA_LARG, TRILHA_Y + 2 ), raio, Tema.TRIGGER );
+        fillCircle( new Vector2( TRILHA_X + posF * TRILHA_LARG, ty + 2 ), raio,
+                ColorUtils.fade( Tema.TRIGGER, e ) );
     }
 }

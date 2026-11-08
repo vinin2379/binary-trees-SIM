@@ -23,6 +23,7 @@ public class Main extends EngineFrame {
     private static final int LARG = 800;
     private static final int ALT = 600;
 
+    private static final double ATRASO_INICIO = 0.3;
     private static final double RAIO_TRIGGER = 24;
     private static final double RAIO_ITEM = 23;
     private static final double RAIO_CIRCULO = 120;
@@ -87,16 +88,22 @@ public class Main extends EngineFrame {
     private Vector2 centro;
     private boolean aberto;
     private boolean triggerHover;
+    private boolean triggerHoverAnt;
     private double tremor;
     private double tempo;
     private double tempoAberto;
 
+    private boolean pronto;
+    private double tempoInicio;
+
     private double tempoRevelacao;
     private boolean revelacaoTerminou;
     private double progressoTrigger;
+    private boolean bolaTocou;
 
     private boolean saindo;
     private double tempoSaida;
+    private boolean coisasTocou;
     private int acaoPendente = -1;
 
     private Point posMenu;
@@ -109,7 +116,6 @@ public class Main extends EngineFrame {
     @Override
     public void create() {
         Sons.iniciar( this );
-        Sons.darkspace();
         centro = new Vector2( LARG / 2.0, CENTRO_Y );
 
         itens = new Item[] {
@@ -126,7 +132,19 @@ public class Main extends EngineFrame {
     }
 
     @Override
-    public void update( double delta ) {
+    public void update( double deltaBruto ) {
+        double delta = Math.min( deltaBruto, 1.0 / 30 );
+
+        // espera a janela estabilizar antes de animar e tocar o som de entrada
+        if ( !pronto ) {
+            tempoInicio += delta;
+            if ( tempoInicio < ATRASO_INICIO ) {
+                return;
+            }
+            pronto = true;
+            Sons.darkspace();
+        }
+
         tempo += delta;
         if ( tremor > 0 ) {
             tremor -= delta;
@@ -134,6 +152,10 @@ public class Main extends EngineFrame {
 
         if ( saindo ) {
             tempoSaida += delta;
+            if ( !coisasTocou && tempoSaida >= INICIO_SAIDA_TITULO ) {
+                coisasTocou = true;
+                Sons.coisasSaindo();
+            }
             double fimSaida = Math.max( DURACAO_SAIDA_MENU,
                     INICIO_SAIDA_TITULO + TITULO.length() * ATRASO_SAIDA_LETRA + DURACAO_SAIDA_LETRA );
             if ( tempoSaida >= fimSaida ) {
@@ -157,11 +179,19 @@ public class Main extends EngineFrame {
         if ( revelacaoTerminou && progressoTrigger < 1 ) {
             progressoTrigger = Math.min( 1, progressoTrigger + delta * 1.8 );
         }
+        if ( revelacaoTerminou && progressoTrigger > 0 && !bolaTocou ) {
+            bolaTocou = true;
+            Sons.bolaAparece();
+        }
 
         boolean interativo = aberto && tempoAberto >= TEMPO_LIBERAR_CLIQUE;
 
         Vector2 mouse = getMousePositionPoint();
         triggerHover = mouse != null && mouse.distance( centro ) <= RAIO_TRIGGER;
+        if ( triggerHover && !triggerHoverAnt ) {
+            Sons.hover();
+        }
+        triggerHoverAnt = triggerHover;
 
         if ( revelacaoTerminou && mouse != null && isMouseButtonPressed( MOUSE_BUTTON_LEFT ) ) {
             if ( triggerHover ) {
@@ -185,7 +215,7 @@ public class Main extends EngineFrame {
                 if ( it.atraso <= 0 ) {
                     it.pendente = false;
                     if ( aberto ) {
-                        Sons.itemAparece();
+                        Sons.itemSai();
                     } else {
                         Sons.itemVolta();
                     }
@@ -201,15 +231,13 @@ public class Main extends EngineFrame {
             it.hover = interativo && mouse != null && mouse.distance( it.pos ) <= RAIO_ITEM;
             if ( it.hover && !it.hoverAnt ) {
                 Sons.hover();
+                it.chacoalhar = 0.35;
             }
             it.hoverAnt = it.hover;
 
             it.tempo += delta;
             if ( it.chacoalhar > 0 ) {
                 it.chacoalhar = Math.max( 0, it.chacoalhar - delta );
-            }
-            if ( it.hover && !it.hoverAnt ) {
-                it.chacoalhar = 0.35;
             }
 
             double escalaAlvo = it.hover ? 1.1 : 1.0;
@@ -223,6 +251,10 @@ public class Main extends EngineFrame {
     @Override
     public void draw() {
         clearBackground( Tema.FUNDO );
+
+        if ( !pronto ) {
+            return;
+        }
 
         if ( saindo ) {
             desenharSaida();
@@ -298,21 +330,25 @@ public class Main extends EngineFrame {
 
     /**
      * Chamado pela janela do simulador ao clicar em "Voltar".
-     * Traz a janela de volta e repete a animação de entrada.
+     * Traz a janela de volta e repete a animação de entrada, com o mesmo atraso inicial.
      */
     public void mostrar() {
         if ( posMenu != null ) {
             setLocation( posMenu );
         }
         toFront();
-        Sons.darkspace();
         reiniciarEntrada();
     }
 
     private void reiniciarEntrada() {
+        pronto = false;
+        tempoInicio = 0;
         tempoRevelacao = 0;
         revelacaoTerminou = false;
         progressoTrigger = 0;
+        bolaTocou = false;
+        coisasTocou = false;
+        triggerHoverAnt = false;
         aberto = false;
         tempoAberto = 0;
         saindo = false;
@@ -376,6 +412,8 @@ public class Main extends EngineFrame {
         saindo = true;
         tempoSaida = 0;
         acaoPendente = acao;
+        Sons.menuRecolhe();
+        Sons.letrasSaindo();
         for ( Item it : itens ) {
             it.hover = false;
         }
