@@ -354,7 +354,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
 
         String leg = arvore.legenda();
         if ( leg != null && fase != Fase.NENHUMA ) {
-            drawText( leg, 10, 575, 14, Tema.TEXTO );
+            desenharLegenda( leg );
         }
 
         double dyToolbar = saindo
@@ -377,6 +377,38 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         }
 
         desenharExtras();
+    }
+
+    /**
+     * Cartão da legenda no canto inferior direito. A primeira linha é o título
+     * do caso; as demais são os detalhes (separados por quebra de linha).
+     */
+    private void desenharLegenda( String texto ) {
+        String[] linhas = texto.split( "\n" );
+        int tamTitulo = 14;
+        int tamDetalhe = 12;
+
+        int largMax = 0;
+        for ( int i = 0; i < linhas.length; i++ ) {
+            int tam = i == 0 ? tamTitulo : tamDetalhe;
+            largMax = Math.max( largMax, measureText( linhas[i], tam ) );
+        }
+
+        double w = largMax + 32;
+        double h = 16 + linhas.length * 18 + 8;
+        double x = getScreenWidth() - w - 14;
+        double y = getScreenHeight() - h - 14;
+
+        BotaoEstilizado.retanguloArredondado( this, x - 1, y - 1, w + 2, h + 2, 11, Tema.BORDA );
+        BotaoEstilizado.retanguloArredondado( this, x, y, w, h, 10, Tema.PAINEL );
+        fillRectangle( x + 10, y + 10, 3, h - 20, Tema.TRIGGER );
+
+        for ( int i = 0; i < linhas.length; i++ ) {
+            boolean titulo = i == 0;
+            int tam = titulo ? tamTitulo : tamDetalhe;
+            Color cor = titulo ? Tema.TRIGGER : Tema.TEXTO;
+            drawText( linhas[i], x + 22, y + 12 + i * 18, tam, cor );
+        }
     }
 
     /** Converte uma posição do mundo para a tela, com a câmera atual. */

@@ -46,6 +46,7 @@ public class RubroNegra extends ArvoreBase {
         return ROXO;
     }
 
+    /** Título e detalhes separados por quebra de linha. */
     @Override
     public String legenda() {
         return legendaAtual;
@@ -149,7 +150,18 @@ public class RubroNegra extends ArvoreBase {
         return h;
     }
 
-    /** Nós do caso causado por N, e a legenda correspondente. */
+    /**
+     * Nós envolvidos no caso causado pela inserção do último nó (N).
+     *
+     * Caso 1 (inserção em nó simples): N vermelho à direita de um pai preto
+     * sem irmão vermelho → rotação à esquerda.
+     *
+     * Caso 2 (inserção em 3-node): pai vermelho, ou pai preto com dois filhos
+     * vermelhos. Dentro dele:
+     *   - tio vermelho (4-node temporário) → inversão de cores;
+     *   - vermelho-vermelho à esquerda → rotação à direita e inversão;
+     *   - vermelho-vermelho em zigue-zague → rotação à esquerda, depois à direita e inversão.
+     */
     @Override
     public List<No> nosAlertados() {
         legendaAtual = null;
@@ -165,27 +177,39 @@ public class RubroNegra extends ArvoreBase {
             if ( g == null ) {
                 return r;
             }
+            No tio = ( g.esq == p ) ? g.d : g.esq;
             r.add( n );
             r.add( p );
             r.add( g );
-            No tio = ( g.esq == p ) ? g.d : g.esq;
+
             if ( isRed( tio ) ) {
                 r.add( tio );
-                legendaAtual = "Caso 02: 4-node temporário, tio vermelho → inversão de cores";
+                legendaAtual = "Caso 2: inserção em 3-node\n"
+                        + "tio vermelho: 4-node temporário, inversão de cores";
+            } else if ( g.esq == p ) {
+                boolean zigueZague = p.d == n;
+                legendaAtual = zigueZague
+                        ? "Caso 2: inserção em 3-node\nzigue-zague: rotação à esquerda, à direita e inversão"
+                        : "Caso 2: inserção em 3-node\ndois vermelhos à esquerda: rotação à direita e inversão";
             } else {
-                legendaAtual = "Caso 02: 4-node temporário, tio preto → rotação e inversão";
+                boolean zigueZague = p.esq == n;
+                legendaAtual = zigueZague
+                        ? "Caso 2: inserção em 3-node\nzigue-zague: rotação à direita, à esquerda e inversão"
+                        : "Caso 2: inserção em 3-node\ndois vermelhos à direita: rotação à esquerda e inversão";
             }
             return r;
         }
 
         if ( p.d == n ) {
-            r.add( n );
-            r.add( p );
             if ( isRed( p.esq ) ) {
+                r.add( n );
+                r.add( p );
                 r.add( p.esq );
-                legendaAtual = "Caso 02: dois filhos vermelhos → inversão de cores";
+                legendaAtual = "Caso 2: inserção em 3-node\ndois filhos vermelhos: inversão de cores";
             } else {
-                legendaAtual = "Caso 01: vermelho à direita → rotação à esquerda";
+                r.add( n );
+                r.add( p );
+                legendaAtual = "Caso 1: inserção em 2-node\nvermelho à direita: rotação à esquerda";
             }
         }
         return r;
