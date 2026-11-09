@@ -41,6 +41,11 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
     private static final double DUR_ARVORE = 0.8;
     private static final double DUR_PISCA = 1.0;
 
+    /** Tempo que a legenda fica totalmente visível depois do último caso. */
+    private static final double LEGENDA_VISIVEL = 2.5;
+    /** Duração do fade da legenda. */
+    private static final double LEGENDA_FADE = 0.6;
+
     /** Posição da caixa de texto na tela (de onde o viajante parte). */
     private static final double CAMPO_X = 90;
     private static final double CAMPO_Y = 20;
@@ -74,6 +79,10 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
     private No novoEmCurso;
     private double tempoPisca;
     private boolean verificacaoPendente;
+
+    /** Legenda exibida agora (null = nenhuma) e o tempo desde que ela apareceu. */
+    private String legendaExibida;
+    private double tempoLegenda;
 
     private double tempoPronto;
     private boolean pronto;
@@ -124,6 +133,8 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         fase = Fase.NENHUMA;
         novoEmCurso = null;
         tempoPisca = 0;
+        legendaExibida = null;
+        tempoLegenda = 0;
 
         camToolbar = new Camera2D();
         camToolbar.target.x = 0;
@@ -168,6 +179,10 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
             }
             pronto = true;
             Sons.elementosSimulador();
+        }
+
+        if ( legendaExibida != null ) {
+            tempoLegenda += delta;
         }
 
         if ( isKeyPressed( KEY_F11 ) ) {
@@ -352,9 +367,11 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         }
         endMode2D();
 
-        String leg = arvore.legenda();
-        if ( leg != null && fase != Fase.NENHUMA ) {
-            desenharLegenda( leg );
+        if ( legendaExibida != null ) {
+            double alpha = alphaLegenda();
+            if ( alpha > 0.01 ) {
+                desenharLegenda( legendaExibida, alpha );
+            }
         }
 
         double dyToolbar = saindo
@@ -379,11 +396,26 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         desenharExtras();
     }
 
+    /** Opacidade da legenda: cheia por um tempo, depois some com fade. */
+    private double alphaLegenda() {
+        if ( tempoLegenda <= LEGENDA_VISIVEL ) {
+            return 1;
+        }
+        return Math.max( 0, 1 - ( tempoLegenda - LEGENDA_VISIVEL ) / LEGENDA_FADE );
+    }
+
+    /** Mostra o caso do put atual. Chamado no início do percurso, não no fim. */
+    private void mostrarLegenda() {
+        arvore.nosAlertados();
+        legendaExibida = arvore.legenda();
+        tempoLegenda = 0;
+    }
+
     /**
      * Cartão da legenda no canto inferior direito. A primeira linha é o título
      * do caso; as demais são os detalhes (separados por quebra de linha).
      */
-    private void desenharLegenda( String texto ) {
+    private void desenharLegenda( String texto, double alpha ) {
         String[] linhas = texto.split( "\n" );
         int tamTitulo = 14;
         int tamDetalhe = 12;
@@ -399,15 +431,17 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         double x = getScreenWidth() - w - 14;
         double y = getScreenHeight() - h - 14;
 
-        BotaoEstilizado.retanguloArredondado( this, x - 1, y - 1, w + 2, h + 2, 11, Tema.BORDA );
-        BotaoEstilizado.retanguloArredondado( this, x, y, w, h, 10, Tema.PAINEL );
-        fillRectangle( x + 10, y + 10, 3, h - 20, Tema.TRIGGER );
+        BotaoEstilizado.retanguloArredondado( this, x - 1, y - 1, w + 2, h + 2, 11,
+                ColorUtils.fade( Tema.BORDA, alpha ) );
+        BotaoEstilizado.retanguloArredondado( this, x, y, w, h, 10,
+                ColorUtils.fade( Tema.PAINEL, alpha ) );
+        fillRectangle( x + 10, y + 10, 3, h - 20, ColorUtils.fade( Tema.TRIGGER, alpha ) );
 
         for ( int i = 0; i < linhas.length; i++ ) {
             boolean titulo = i == 0;
             int tam = titulo ? tamTitulo : tamDetalhe;
             Color cor = titulo ? Tema.TRIGGER : Tema.TEXTO;
-            drawText( linhas[i], x + 22, y + 12 + i * 18, tam, cor );
+            drawText( linhas[i], x + 22, y + 12 + i * 18, tam, ColorUtils.fade( cor, alpha ) );
         }
     }
 
@@ -518,7 +552,7 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
 
     /**
      * Fase de viagem: BST pura. O círculo nasce no lugar onde o número estava
-     * na caixa de texto e segue até o nó.
+     * na caixa de texto e segue até o nó. O caso é mostrado já neste instante.
      */
     private void iniciarInsercaoDidatica( int valor ) {
         List<No> caminho = arvore.caminhoAte( valor );
@@ -532,6 +566,8 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         novo.ligacaoBloqueada = true;
         novoEmCurso = novo;
         fase = Fase.VIAJANDO;
+
+        mostrarLegenda();
 
         // centro do número dentro da caixa, convertido para o mundo
         double larg = measureText( String.valueOf( valor ), TAM_TEXTO_CAMPO );
@@ -563,6 +599,8 @@ public abstract class JanelaSimuladorArvore extends EngineFrame {
         fase = Fase.NENHUMA;
         verificacaoPendente = false;
         noSobMouse = null;
+        legendaExibida = null;
+        tempoLegenda = 0;
         campoValor.limpar();
     }
 }
